@@ -352,7 +352,8 @@ function renderBrandOptions(sel, selected=""){
     if(sel.value==="__add_brand__"){
       const v = prompt("追加するブランド名を入力してください");
       if(v && v.trim()){
-         = loadBrands(); if(!list.includes(v)) { list.push(v); saveBrands(list); }
+        const list = loadBrands();        // ← これが抜けていた
+        if(!list.includes(v)) { list.push(v); saveBrands(list); }
         renderAllBrandSelects();
         sel.value = v;
         toast("ブランドを追加しました");
@@ -805,8 +806,14 @@ function buildBrandBoard(){
   const title=document.createElement("span"); title.textContent="ブランド一覧";
   head.appendChild(title); col.appendChild(head);
 
-  const list=document.createElement("div"); list.className="list"; col.appendChild(list);
-  const dropLine=document.createElement("div"); dropLine.className="drop-line"; list.appendChild(dropLine); col.appendChild(list);
+  const list = document.createElement("div");
+list.className = "list";
+col.appendChild(list);
+
+const dropLine = document.createElement("div");
+dropLine.className = "drop-line";
+list.appendChild(dropLine);
+
 
   brands.forEach(b=>{
     const el=document.createElement("div"); el.className="item"; el.draggable=true;

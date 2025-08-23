@@ -351,15 +351,16 @@ function renderBrandOptions(sel, selected=""){
   sel.onchange = ()=>{
     if(sel.value==="__add_brand__"){
       const v = prompt("追加するブランド名を入力してください");
-      if(v && v.trim()){
-        const list = loadBrands();        // ← これが抜けていた
-        if(!list.includes(v)) { list.push(v); saveBrands(list); }
-        renderAllBrandSelects();
-        sel.value = v;
-        toast("ブランドを追加しました");
-      }else{
-        sel.value = "";
-      }
+    if(v && v.trim()){
+  const list = loadBrands();
+  if(!list.includes(v)) { list.push(v); saveBrands(list); }
+  renderAllBrandSelects();
+  sel.value = v;
+  toast("ブランドを追加しました");
+}else{
+  sel.value = "";
+}
+
     }
   };
 }

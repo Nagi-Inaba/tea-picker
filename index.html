@@ -12,9 +12,9 @@
     header{position:sticky;top:0;background:#fff;padding:10px var(--pad);box-shadow:var(--shadow);z-index:2;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     header h1{font-size:18px;margin:0;flex:1}
     button,select,input,textarea{font-size:16px}
-    .btn{padding:10px 14px;border-radius:8px;border:1px solid #d0d6e0;background:#fff;cursor:pointer}
+    .btn{padding:8px 14px;border-radius:8px;border:1px solid #d0d6e0;background:#fff;cursor:pointer}
     .btn.primary{background:#111;color:#fff;border-color:#111}
-    .btn.danger{background:#fff;color:#b00020;border-color:#b00020}
+    .btn.danger{color:#b00020;border-color:#b00020}
     .wrap{padding:var(--pad);max-width:1000px;margin:0 auto}
     .card{background:#fff;border:1px solid #e4e7ee;border-radius:var(--radius);padding:var(--pad);box-shadow:var(--shadow);margin-bottom:12px}
     .tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
@@ -26,9 +26,34 @@
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid #eef1f6;padding:6px;text-align:left;font-size:14px}
     th{background:#fafbfc;position:sticky;top:0;z-index:1}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    /* 編集可能セル */
+    td[contenteditable="true"],
+    td.editable input[type="date"],
+    td.editable textarea {
+      background:#f8f9fa;
+      padding:6px;
+      border-radius:4px;
+      min-width:100px;
+      cursor:text;
+    }
+    td[contenteditable="true"]:focus,
+    td.editable input[type="date"]:focus,
+    td.editable textarea:focus {
+      background:#fff;
+      border:1px solid #666;
+      outline:none;
+    }
+    /* プルダウン */
+    td select {
+      background:#fff;
+      padding:4px;
+      border:1px solid #ccc;
+      border-radius:4px;
+      cursor:pointer;
+    }
+    td select:focus{border-color:#666;outline:none}
     .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef4ff;border:1px solid #cfe0ff;font-size:12px}
-    .toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;opacity:0;transition:opacity 0.3s;z-index:999}
+    .toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;opacity:0;transition:opacity .3s;z-index:999}
     .toast.show{opacity:1}
     .fab{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;border:none;border-radius:50%;width:56px;height:56px;font-size:24px;box-shadow:var(--shadow);cursor:pointer;display:none}
     @media(max-width:768px){.fab{display:block}}
@@ -41,7 +66,6 @@
 </header>
 
 <div class="wrap">
-
   <div class="tabs">
     <button class="tab active" data-tab="draw">抽選</button>
     <button class="tab" data-tab="table">茶葉リスト</button>
@@ -53,18 +77,23 @@
   <section id="tab-draw" class="card">
     <div class="controls">
       <label>種類(産地)
-        <select id="fType"></select>
+        <select id="fType">
+          <option value="">指定なし</option>
+          <option>アッサム</option><option>ダージリン</option><option>ニルギリ</option><option>ドアーズ</option>
+          <option>ディンブラ</option><option>ヌワラエリヤ</option><option>キャンディ</option><option>ウバ</option><option>ウダプセラワ</option><option>ルフナ</option>
+          <option>キーマン</option><option>ラプサンスーチョン</option>
+          <option>ブレンド</option><option>アールグレイ</option><option>フレーバード</option><option>ルイボス</option>
+          <option>その他</option>
+        </select>
       </label>
       <label>カフェイン
         <select id="fCaf">
-          <option value="">すべて</option>
+          <option value="">指定なし</option>
           <option value="有">有</option>
           <option value="無">無</option>
         </select>
       </label>
-      <label>フリーワード
-        <input id="fKeyword" placeholder="商品名・種類・メモで検索">
-      </label>
+      <label>フリーワード <input id="fKeyword" placeholder="商品名・種類・メモで検索"></label>
     </div>
     <hr />
     <div id="drawResult">まだ抽選していません。</div>
@@ -74,19 +103,28 @@
   <section id="tab-table" class="card" style="display:none">
     <div style="overflow:auto;max-height:60vh">
       <table id="teaTable">
-        <thead>
-          <tr>
-            <th>商品名</th><th>ブランド</th><th>種類(産地)</th><th>カフェイン</th>
-            <th>在庫</th><th>賞味期限</th><th>基本重み</th><th>抽選対象</th><th>メモ</th>
-          </tr>
-        </thead>
+        <thead><tr>
+          <th>商品名</th><th>ブランド</th><th>種類(産地)</th><th>カフェイン</th><th>在庫</th>
+          <th>賞味期限</th><th>基本重み</th><th>抽選対象</th><th>メモ</th>
+        </tr></thead>
         <tbody>
           <!-- 初期5行 -->
-          <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td><select><option>あり</option><option>なし</option></select></td><td><input type="date"></td><td contenteditable>1</td><td><input type="checkbox" checked></td><td contenteditable></td></tr>
-          <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td><select><option>あり</option><option>なし</option></select></td><td><input type="date"></td><td contenteditable>1</td><td><input type="checkbox" checked></td><td contenteditable></td></tr>
-          <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td><select><option>あり</option><option>なし</option></select></td><td><input type="date"></td><td contenteditable>1</td><td><input type="checkbox" checked></td><td contenteditable></td></tr>
-          <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td><select><option>あり</option><option>なし</option></select></td><td><input type="date"></td><td contenteditable>1</td><td><input type="checkbox" checked></td><td contenteditable></td></tr>
-          <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td><select><option>あり</option><option>なし</option></select></td><td><input type="date"></td><td contenteditable>1</td><td><input type="checkbox" checked></td><td contenteditable></td></tr>
+          ${[...Array(5)].map(()=>`
+            <tr>
+              <td contenteditable="true"></td>
+              <td contenteditable="true"></td>
+              <td contenteditable="true"></td>
+              <td>
+                <select><option value="">指定なし</option><option>有</option><option>無</option></select>
+              </td>
+              <td>
+                <select><option value="">指定なし</option><option>あり</option><option>なし</option></select>
+              </td>
+              <td class="editable"><input type="date"></td>
+              <td contenteditable="true">1</td>
+              <td><input type="checkbox" checked></td>
+              <td contenteditable="true"></td>
+            </tr>`).join("")}
         </tbody>
       </table>
     </div>
@@ -104,7 +142,6 @@
       <button class="subtab active" data-sub="simple">簡単設定</button>
       <button class="subtab" data-sub="advanced">上級設定</button>
     </div>
-
     <div id="sub-simple">
       <label>抽選モード
         <select id="mode">
@@ -116,13 +153,12 @@
       <hr>
       <button id="btnClearHist" class="btn danger">履歴と重み設定を初期化</button>
     </div>
-
     <div id="sub-advanced" style="display:none">
-      <p><b>D（日）</b>：期限が近いほど重くする効果が立ち上がる範囲（例: D=60 → 残30日で半分、0日で最大）</p>
-      <p><b>K（強調係数）</b>：期限が近い時の増やし方（例: K=2 → 最大3倍）</p>
-      <p><b>recentN</b>：直近N回の当選銘柄を出にくくする回数</p>
-      <p><b>biasFactor</b>：その下げ幅（例:0.5で半分）</p>
-      <p><b>基本重み</b>：銘柄ごとの基礎確率（1=標準,2=出やすい,0.5=出にくい）</p>
+      <label>D（日） <input id="setD" type="number" min="1" value="60"></label>
+      <label>K（強調係数） <input id="setK" type="number" step="0.1" value="2"></label>
+      <label>recentN <input id="setRecentN" type="number" min="0" value="5"></label>
+      <label>biasFactor <input id="setBias" type="number" step="0.1" value="0.5"></label>
+      <p>※値を変更すると即保存され、次回抽選から反映されます</p>
     </div>
   </section>
 </div>
@@ -131,22 +167,44 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
-// --- 簡易実装（データはlocalStorage, 抽選ロジック省略の雛形） ---
-const $ = s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2000);}
+let isDrawing=false; function setBtnLabel(label){$("#btnDraw").textContent=label;$("#fab").textContent=(label==="抽選する"?"🎲":"🔄");}
 
-let isDrawing=false;
-function setBtnLabel(label){$("#btnDraw").textContent=label;$("#fab").textContent=(label==="抽選する"?"🎲":"🔄");}
+// 設定保持
+function loadSettings(){return JSON.parse(localStorage.getItem("settings")||'{"D":60,"K":2,"recentN":5,"biasFactor":0.5,"mode":"recommended"}');}
+function saveSettings(s){localStorage.setItem("settings",JSON.stringify(s));}
 
-$("#btnDraw").addEventListener("click",()=>{ if(isDrawing) return; isDrawing=true; setTimeout(()=>{isDrawing=false},400); setBtnLabel("再抽選"); $("#drawResult").textContent="サンプル: アッサム"; });
+// 抽選ボタン
+$("#btnDraw").addEventListener("click",()=>{
+  if(isDrawing)return; isDrawing=true; setTimeout(()=>{isDrawing=false},400);
+  setBtnLabel("再抽選");
+  $("#drawResult").textContent="サンプル抽選結果（本実装でロジック反映）";
+});
 $("#fab").addEventListener("click",()=>$("#btnDraw").click());
-$("#btnExportHistory").addEventListener("click",()=>{ if(confirm("履歴CSVを保存しますか？")) toast("保存しました");});
-$("#btnClearHist").addEventListener("click",()=>{ if(confirm("履歴と重み設定を初期化します。よろしいですか？")) toast("初期化しました");});
 
-// タブ
+// CSV保存
+$("#btnExportHistory").addEventListener("click",()=>{if(confirm("履歴CSVを保存しますか？"))toast("保存しました");});
+$("#btnClearHist").addEventListener("click",()=>{if(confirm("履歴と重み設定を初期化します。よろしいですか？")){localStorage.removeItem("settings");toast("初期化しました");}});
+
+// タブ切替
 $$(".tab").forEach(b=>b.addEventListener("click",()=>{ $$(".tab").forEach(t=>t.classList.remove("active")); b.classList.add("active"); ["draw","table","history","settings"].forEach(id=>$("#tab-"+id).style.display=(b.dataset.tab===id)?"block":"none"); }));
 // サブタブ
 $$(".subtab").forEach(b=>b.addEventListener("click",()=>{ $$(".subtab").forEach(t=>t.classList.remove("active")); b.classList.add("active"); $("#sub-simple").style.display=(b.dataset.sub==="simple")?"block":"none"; $("#sub-advanced").style.display=(b.dataset.sub==="advanced")?"block":"none"; }));
+
+// 上級設定（即保存）
+["setD","setK","setRecentN","setBias"].forEach(id=>{
+  $("#"+id).addEventListener("input",()=>{
+    const s=loadSettings();
+    s.D=parseInt($("#setD").value)||60;
+    s.K=parseFloat($("#setK").value)||2;
+    s.recentN=parseInt($("#setRecentN").value)||5;
+    s.biasFactor=parseFloat($("#setBias").value)||0.5;
+    saveSettings(s);
+    toast("設定を保存しました");
+  });
+});
+$("#mode").addEventListener("change",()=>{const s=loadSettings();s.mode=$("#mode").value;saveSettings(s);toast("モードを変更しました");});
 </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 {
-  "name": "紅茶抽選（ローカル保存）",
+  "name": "紅茶抽選（シンプル版）",
   "short_name": "紅茶抽選",
   "start_url": "./",
   "display": "standalone",

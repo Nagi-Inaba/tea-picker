@@ -285,22 +285,36 @@ function loadTypeSchema(){
   let raw = localStorage.getItem("typeSchema");
   if(!raw){
     const legacy = localStorage.getItem("types");
-    if(legacy){ localStorage.setItem("typeSchema", legacy); raw=legacy; }
+    if(legacy){ localStorage.setItem("typeSchema", legacy); raw = legacy; }
   }
-  let obj=null; try{ obj = raw ? JSON.parse(raw) : null; }catch(e){ obj=null; }
-  // 空・壊れ・配列/型不整合を自動修復
-  if(!obj || typeof obj!=="object" || Array.isArray(obj) || Object.keys(obj).length===0){
-    obj = JSON.parse(JSON.stringify(DEFAULT_TYPES));
-    localStorage.setItem("typeSchema", JSON.stringify(obj));
+  let obj = null;
+  try { obj = raw ? JSON.parse(raw) : null; } catch(e){ obj = null; }
+
+  const defaults = JSON.parse(JSON.stringify(DEFAULT_TYPES));
+  let changed = false;
+
+  if(!obj || typeof obj !== "object" || Array.isArray(obj)){
+    obj = defaults; changed = true;
   }else{
-    let changed=false;
+    // 値が配列でないものは配列化
     Object.keys(obj).forEach(k=>{
-      if(!Array.isArray(obj[k])){ obj[k]=[]; changed=true; }
+      if(!Array.isArray(obj[k])){ obj[k] = []; changed = true; }
     });
-    if(changed) localStorage.setItem("typeSchema", JSON.stringify(obj));
+    // 全カテゴリ合計で子要素が0なら、デフォルトをマージ（＝初期データ復旧）
+    const totalItems = Object.values(obj).reduce((n,arr)=> n + (Array.isArray(arr)?arr.length:0), 0);
+    if(totalItems === 0){
+      Object.keys(defaults).forEach(cat=>{
+        if(!obj[cat] || obj[cat].length === 0){
+          obj[cat] = defaults[cat].slice();
+        }
+      });
+      changed = true;
+    }
   }
+  if(changed) localStorage.setItem("typeSchema", JSON.stringify(obj));
   return obj;
 }
+
 function saveTypeSchema(obj){ localStorage.setItem("typeSchema", JSON.stringify(obj)); }
 
 /* ========= SELECT RENDER ========= */
@@ -356,6 +370,7 @@ function renderTypeSelect(sel, selected=""){
       if(!schema2[chosenCat]) schema2[chosenCat] = [];
       if(!schema2[chosenCat].includes(item)) schema2[chosenCat].push(item);
       saveTypeSchema(schema2);
+      buildTypeBoard();
       refreshAllTypeSelects();
       sel.value = item;
       toast("種類(産地)を追加しました");

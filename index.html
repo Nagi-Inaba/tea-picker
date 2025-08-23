@@ -352,7 +352,7 @@ function renderBrandOptions(sel, selected=""){
     if(sel.value==="__add_brand__"){
       const v = prompt("追加するブランド名を入力してください");
       if(v && v.trim()){
-        const list = loadBrands(); if(!list.includes(v)) { list.push(v); saveBrands(list); }
+         = loadBrands(); if(!list.includes(v)) { list.push(v); saveBrands(list); }
         renderAllBrandSelects();
         sel.value = v;
         toast("ブランドを追加しました");
@@ -577,7 +577,10 @@ $$(".subtab").forEach(b=>b.addEventListener("click",()=>{
   $("#sub-custom").style.display=(b.dataset.sub==="custom")?"block":"none";
   $("#sub-types").style.display=(b.dataset.sub==="types")?"block":"none";
   $("#sub-brands").style.display=(b.dataset.sub==="brands")?"block":"none";
+  if(b.dataset.sub==="types")  buildTypeBoard(); 
+  if(b.dataset.sub==="brands") buildBrandBoard();
 }));
+
 
 /* カスタム（即保存） */
 ["setD","setK","setRecentN","setBias"].forEach(id=>{
@@ -605,75 +608,138 @@ function buildTypeBoard(){
   });
 }
 function makeTypeColumn(catName, items){
-  const col=document.createElement("div");
-  col.className="col"; col.draggable=true; col.dataset.cat=catName;
+  const col = document.createElement("div");
+  col.className = "col";
+  col.draggable = true;
+  col.dataset.cat = catName;
 
-  const head=document.createElement("header");
-  const grip=document.createElement("span"); grip.className="grip"; // 6点
-  const nameSpan=document.createElement("span"); nameSpan.className="cat-name"; nameSpan.textContent=catName; nameSpan.contentEditable=true;
-  nameSpan.addEventListener("blur",()=>{
-    const sc=loadTypeSchema(); const old=col.dataset.cat; const nv=nameSpan.textContent.trim()||old;
-    if(nv!==old){
-      sc[nv]=sc[old]||[]; delete sc[old]; saveTypeSchema(sc); col.dataset.cat=nv; buildTypeBoard(); refreshAllTypeSelects(); toast("カテゴリー名を更新しました");
+  // ヘッダ（カテゴリ名編集 & 削除）
+  const head = document.createElement("header");
+  const grip = document.createElement("span"); grip.className = "grip";
+  const nameSpan = document.createElement("span");
+  nameSpan.className = "cat-name";
+  nameSpan.textContent = catName;
+  nameSpan.contentEditable = true;
+  nameSpan.addEventListener("blur", () => {
+    const sc = loadTypeSchema();
+    const old = col.dataset.cat;
+    const nv = nameSpan.textContent.trim() || old;
+    if (nv !== old) {
+      sc[nv] = sc[old] || [];
+      delete sc[old];
+      saveTypeSchema(sc);
+      col.dataset.cat = nv;
+      buildTypeBoard();
+      refreshAllTypeSelects();
+      toast("カテゴリー名を更新しました");
     }
   });
-  const del=document.createElement("button"); del.className="del"; del.textContent="×";
-  del.addEventListener("click",()=>{const sc=loadTypeSchema(); delete sc[col.dataset.cat]; saveTypeSchema(sc); buildTypeBoard(); refreshAllTypeSelects(); toast("カテゴリーを削除しました");});
-  head.appendChild(grip); head.appendChild(nameSpan); head.appendChild(del);
+  const del = document.createElement("button");
+  del.className = "del";
+  del.textContent = "×";
+  del.addEventListener("click", () => {
+    const sc = loadTypeSchema();
+    delete sc[col.dataset.cat];
+    saveTypeSchema(sc);
+    buildTypeBoard();
+    refreshAllTypeSelects();
+    toast("カテゴリーを削除しました");
+  });
+  head.appendChild(grip);
+  head.appendChild(nameSpan);
+  head.appendChild(del);
   col.appendChild(head);
 
-  const list=document.createElement("div"); list.className="list"; list.dataset.cat=catName;
-  const dropLine=document.createElement("div"); dropLine.className="drop-line"; list.appendChild(dropLine);
+  // ★ 子リスト本体（ここが DOM に乗っていないと子が見えない）
+  const list = document.createElement("div");
+  list.className = "list";
+  list.dataset.cat = catName;
 
+  const dropLine = document.createElement("div");
+  dropLine.className = "drop-line";
+  list.appendChild(dropLine);
+
+  col.appendChild(list); // ← これが超重要
+
+  // D&D（項目）
   list.addEventListener("dragover",(e)=>{
     e.preventDefault();
-    const dragging=$(".item.dragging");
+    const dragging = document.querySelector(".item.dragging");
     if(!dragging) return;
-    const children=[...list.querySelectorAll(".item:not(.dragging)")];
-    let nearest=null; let nearestOffset=Number.NEGATIVE_INFINITY;
+    const children = [...list.querySelectorAll(".item:not(.dragging)")];
+    let nearest = null; let nearestOffset = Number.NEGATIVE_INFINITY;
     children.forEach(c=>{
       const box=c.getBoundingClientRect();
       const offset=e.clientY - box.top - box.height/2;
       if(offset<0 && offset>nearestOffset){ nearestOffset=offset; nearest=c; }
     });
-    if(nearest==null){ list.appendChild(dragging); dropLine.style.display="block"; dropLine.style.top=(list.scrollTop+list.clientHeight-8)+"px"; }
-    else{ list.insertBefore(dragging, nearest); dropLine.style.display="block"; dropLine.style.top=(nearest.offsetTop)+"px"; }
+    if(nearest==null){
+      list.appendChild(dragging);
+      dropLine.style.display="block";
+      dropLine.style.top=(list.scrollTop+list.clientHeight-8)+"px";
+    }else{
+      list.insertBefore(dragging, nearest);
+      dropLine.style.display="block";
+      dropLine.style.top=(nearest.offsetTop)+"px";
+    }
   });
   list.addEventListener("dragleave",()=>{ dropLine.style.display="none"; });
   list.addEventListener("drop",()=>{ dropLine.style.display="none"; saveTypesFromBoard(); refreshAllTypeSelects(); });
 
-  items.forEach(it=>{
+  // 既存アイテムを描画
+  (items||[]).forEach(it=>{
     const itemEl=document.createElement("div");
     itemEl.className="item"; itemEl.draggable=true;
+
     const ig=document.createElement("span"); ig.className="grip";
     const label=document.createElement("span"); label.className="label"; label.textContent=it;
     const x=document.createElement("button"); x.className="del"; x.textContent="×";
     x.addEventListener("click",()=>{ itemEl.remove(); saveTypesFromBoard(); refreshAllTypeSelects(); toast("削除しました"); });
-    itemEl.appendChild(ig); itemEl.appendChild(label); itemEl.appendChild(x);
+
+    itemEl.appendChild(ig);
+    itemEl.appendChild(label);
+    itemEl.appendChild(x);
+
     itemEl.addEventListener("dragstart",()=>itemEl.classList.add("dragging"));
-    itemEl.addEventListener("dragend",()=>{itemEl.classList.remove("dragging");});
-    list.appendChild(itemEl);
+    itemEl.addEventListener("dragend",()=>{ itemEl.classList.remove("dragging"); });
+
+    list.appendChild(itemEl); // ← 必ず list に追加
   });
 
-  // 追加
+  // 追加入力行
   const addWrap=document.createElement("div"); addWrap.className="row";
-  const inp=document.createElement("input"); inp.placeholder="項目を追加"; inp.style.cssText="flex:1;padding:6px;border:1px solid #ccc;border-radius:6px";
+  const inp=document.createElement("input");
+  inp.placeholder="項目を追加";
+  inp.style.cssText="flex:1;padding:6px;border:1px solid #ccc;border-radius:6px";
   const btn=document.createElement("button"); btn.className="btn"; btn.textContent="＋ 追加";
   btn.addEventListener("click",()=>{
     const v=inp.value.trim(); if(!v) return;
-    const newEl=document.createElement("div"); newEl.className="item"; newEl.draggable=true;
+    const newEl=document.createElement("div");
+    newEl.className="item"; newEl.draggable=true;
+
     const ig=document.createElement("span"); ig.className="grip";
     const label=document.createElement("span"); label.className="label"; label.textContent=v;
     const x=document.createElement("button"); x.className="del"; x.textContent="×";
     x.addEventListener("click",()=>{ newEl.remove(); saveTypesFromBoard(); refreshAllTypeSelects(); toast("削除しました"); });
-    newEl.appendChild(ig); newEl.appendChild(label); newEl.appendChild(x);
-    newEl.addEventListener("dragstart",()=>newEl.classList.add("dragging"));
-    newEl.addEventListener("dragend",()=>{newEl.classList.remove("dragging");});
-    list.appendChild(newEl); inp.value=""; saveTypesFromBoard(); refreshAllTypeSelects(); toast("追加しました");
-  });
-  addWrap.appendChild(inp); addWrap.appendChild(btn); col.appendChild(addWrap);
 
-  // カテゴリ列のドラッグ（可視化）
+    newEl.appendChild(ig);
+    newEl.appendChild(label);
+    newEl.appendChild(x);
+
+    newEl.addEventListener("dragstart",()=>newEl.classList.add("dragging"));
+    newEl.addEventListener("dragend",()=>{ newEl.classList.remove("dragging"); });
+
+    list.appendChild(newEl);
+    inp.value="";
+    saveTypesFromBoard();     // ← 保存
+    refreshAllTypeSelects();  // ← プルダウン即反映
+    toast("追加しました");
+  });
+  addWrap.appendChild(inp);
+  addWrap.appendChild(btn);
+  col.appendChild(addWrap);
+
+  // （任意）カテゴリ列自体の D&D フック
   col.addEventListener("dragstart",(e)=>{ if(e.target===col){ col.classList.add("dragging"); }});
   col.addEventListener("dragend",()=>{ col.classList.remove("dragging"); saveTypesFromBoard(); refreshAllTypeSelects(); });
 
@@ -740,7 +806,7 @@ function buildBrandBoard(){
   head.appendChild(title); col.appendChild(head);
 
   const list=document.createElement("div"); list.className="list"; col.appendChild(list);
-  const dropLine=document.createElement("div"); dropLine.className="drop-line"; list.appendChild(dropLine);
+  const dropLine=document.createElement("div"); dropLine.className="drop-line"; list.appendChild(dropLine); col.appendChild(list);
 
   brands.forEach(b=>{
     const el=document.createElement("div"); el.className="item"; el.draggable=true;

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>紅茶抽選（ローカル保存）</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
+  <style>
+    :root{--pad:12px;--radius:10px;--gap:10px;--shadow:0 2px 12px rgba(0,0,0,.08)}
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP","Apple Color Emoji","Segoe UI Emoji";}
+    body{margin:0;background:#f6f7f9;color:#111}
+    header{position:sticky;top:0;background:#fff;padding:10px var(--pad);box-shadow:var(--shadow);z-index:2;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    header h1{font-size:18px;margin:0;flex:1}
+    button,select,input,textarea{font-size:16px}
+    .btn{padding:10px 14px;border-radius:8px;border:1px solid #d0d6e0;background:#fff;cursor:pointer}
+    .btn.primary{background:#111;color:#fff;border-color:#111}
+    .btn.ghost{background:transparent}
+    .wrap{padding:var(--pad);max-width:1100px;margin:0 auto}
+    .card{background:#fff;border:1px solid #e4e7ee;border-radius:var(--radius);padding:var(--pad);box-shadow:var(--shadow);margin-bottom:12px}
+    .grid{display:grid;gap:var(--gap)}
+    @media(min-width:900px){.grid.two{grid-template-columns:1fr 1fr}}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+    .tab{padding:8px 12px;border-radius:999px;border:1px solid #d0d6e0;background:#fff;cursor:pointer}
+    .tab.active{background:#111;color:#fff;border-color:#111}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #eef1f6;padding:8px;text-align:left}
+    th{position:sticky;top:0;background:#fafbfc;z-index:1}
+    tr:hover td{background:#fafcfe}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef4ff;border:1px solid #cfe0ff;font-size:12px}
+    .kpi{font-size:14px;opacity:.75}
+    .result{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .danger{color:#b00020}
+    .muted{opacity:.75}
+    .section-title{font-weight:600;margin:0 0 4px}
+    .textarea{width:100%;min-height:70px}
+    .sticky-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .footer{padding:20px;text-align:center;color:#666}
+  </style>
+</head>
+<body>
+<header>
+  <h1>紅茶抽選（ローカル保存）</h1>
+  <button id="btnDraw" class="btn primary">1件 抽選する</button>
+  <span id="today" class="kpi"></span>
+</header>
+
+<div class="wrap">
+
+  <div class="tabs">
+    <button class="tab active" data-tab="draw">抽選</button>
+    <button class="tab" data-tab="table">茶葉テーブル</button>
+    <button class="tab" data-tab="history">履歴</button>
+    <button class="tab" data-tab="settings">設定</button>
+    <button class="tab" data-tab="io">インポート/エクスポート</button>
+  </div>
+
+  <!-- 抽選 -->
+  <section id="tab-draw" class="card">
+    <p class="section-title">フィルタ</p>
+    <div class="controls">
+      <label>Type
+        <select id="fType" multiple size="1"></select>
+      </label>
+      <label>Caffeine
+        <select id="fCaf">
+          <option value="">指定なし</option>
+          <option value="有">有</option>
+          <option value="無">無</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="fExcludeExpired" checked> 期限切れを除外</label>
+      <label>ブランド除外 <input id="fExcludeBrand" placeholder="例: BrandX, BrandY"></label>
+      <label>キーワード <input id="fKeyword" placeholder="例: bergamot"></label>
+      <label>タグ <input id="fTags" placeholder="例: モーニング,ミルク"></label>
+    </div>
+    <hr />
+    <div class="result" id="drawResult">
+      <span class="muted">まだ抽選していません。</span>
+    </div>
+  </section>
+
+  <!-- テーブル -->
+  <section id="tab-table" class="card" style="display:none">
+    <div class="sticky-actions">
+      <button class="btn" id="btnAddRow">行を追加</button>
+      <button class="btn" id="btnDeleteSelected">選択行を削除</button>
+      <button class="btn" id="btnSample">サンプルデータ</button>
+      <span class="kpi" id="countInfo"></span>
+    </div>
+    <div style="overflow:auto;max-height:60vh;margin-top:8px">
+      <table id="teaTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="chkAll"></th>
+            <th>Name*</th><th>Brand</th><th>Type</th><th>Caffeine</th>
+            <th>Stock</th><th>BestBefore</th><th>BaseWeight</th><th>Enabled</th><th>Tags</th><th>Notes</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 履歴 -->
+  <section id="tab-history" class="card" style="display:none">
+    <div class="sticky-actions">
+      <button class="btn" id="btnExportHistoryCsv">履歴CSVダウンロード</button>
+      <span class="kpi" id="histInfo"></span>
+    </div>
+    <div style="overflow:auto;max-height:60vh;margin-top:8px">
+      <table id="histTable">
+        <thead>
+          <tr><th>Timestamp</th><th>Name</th><th>Brand</th><th>Type</th><th>BestBefore</th><th>WeightUsed</th><th>UserNote</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 設定 -->
+  <section id="tab-settings" class="card" style="display:none">
+    <div class="grid two">
+      <div>
+        <p class="section-title">抽選パラメータ</p>
+        <div class="controls">
+          <label>D（日） <input id="setD" type="number" min="1" value="60"></label>
+          <label>K（強調係数） <input id="setK" type="number" step="0.1" value="3"></label>
+          <label>recentN <input id="setRecentN" type="number" min="0" value="5"></label>
+          <label>biasFactor <input id="setBias" type="number" step="0.1" value="0.5"></label>
+          <label><input type="checkbox" id="setAutoDec" checked> 当選時にStockを1減らす</label>
+        </div>
+        <div class="controls">
+          <button class="btn primary" id="btnSaveSettings">設定を保存</button>
+          <span class="kpi" id="settingsSaved" style="display:none">保存しました</span>
+        </div>
+      </div>
+      <div>
+        <p class="section-title">メンテナンス</p>
+        <div class="controls">
+          <button class="btn danger" id="btnClearAll">全データ初期化（要確認）</button>
+          <span class="muted">※ブラウザ内の保存を削除します</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- I/O -->
+  <section id="tab-io" class="card" style="display:none">
+    <div class="grid two">
+      <div>
+        <p class="section-title">エクスポート</p>
+        <div class="controls">
+          <button class="btn" id="btnExportJson">JSONを保存</button>
+          <button class="btn" id="btnExportCsv">CSVを保存</button>
+        </div>
+      </div>
+      <div>
+        <p class="section-title">インポート</p>
+        <div class="controls">
+          <input type="file" id="fileImport" accept=".json,.csv">
+          <button class="btn" id="btnImport">読み込み</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer muted">データはあなたのブラウザにのみ保存されます（IndexedDB & LocalStorage）。</div>
+</div>
+
+<script>
+// ---------- Storage (IndexedDB with fallback) ----------
+const DB_NAME = 'tea-picker-db';
+const DB_VER = 1;
+const STORE_TEAS = 'teas';
+const STORE_HIST = 'history';
+const KEY_SETTINGS = 'settings';
+
+let db;
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){ resolve(null); return; }
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = (e)=>{
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains(STORE_TEAS)){
+        const s = d.createObjectStore(STORE_TEAS,{keyPath:'id',autoIncrement:true});
+      }
+      if(!d.objectStoreNames.contains(STORE_HIST)){
+        d.createObjectStore(STORE_HIST,{keyPath:'id',autoIncrement:true});
+      }
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+async function idbTx(store, mode, fn){
+  if(!db) db = await idbOpen();
+  if(!db){ // fallback: LocalStorage
+    return fn({ // super tiny shim using memory array from LS
+      getAll: ()=>JSON.parse(localStorage.getItem(store) || '[]'),
+      put: (obj)=>{
+        const arr = JSON.parse(localStorage.getItem(store) || '[]');
+        if(!obj.id){ obj.id = (arr.reduce((m,o)=>Math.max(m,o.id||0),0)+1); }
+        const idx = arr.findIndex(x=>x.id===obj.id);
+        if(idx>=0) arr[idx]=obj; else arr.push(obj);
+        localStorage.setItem(store, JSON.stringify(arr));
+      },
+      bulkPut: (objs)=>{
+        localStorage.setItem(store, JSON.stringify(objs.map((o,i)=>({...o,id:o.id||i+1}))));
+      },
+      delete: (id)=>{
+        const arr = JSON.parse(localStorage.getItem(store) || '[]').filter(x=>x.id!==id);
+        localStorage.setItem(store, JSON.stringify(arr));
+      },
+      clear: ()=>localStorage.removeItem(store)
+    });
+  }
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(store, mode);
+    const st = tx.objectStore(store);
+    const adapter = {
+      async getAll(){ return await new Promise((res,rej)=>{ const r = st.getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}); },
+      async put(obj){ return await new Promise((res,rej)=>{ const r = st.put(obj); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}); },
+      async bulkPut(objs){ for(const o of objs){ await new Promise((res,rej)=>{ const r = st.put(o); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}); } },
+      async delete(id){ return await new Promise((res,rej)=>{ const r = st.delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}); },
+      async clear(){ st.clear(); }
+    };
+    Promise.resolve(fn(adapter)).then(resolve).catch(reject);
+  });
+}
+
+// ---------- Utilities ----------
+const $ = (q) => document.querySelector(q);
+const $$ = (q) => Array.from(document.querySelectorAll(q));
+const fmtDate = (d)=>{
+  const z=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+};
+const parseDate = (s)=>{ if(!s) return null; const t = new Date(s); return isNaN(+t)? null : t; };
+const daysBetween = (a,b)=>Math.floor((a-b)/(1000*60*60*24));
+const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
+
+// ---------- Settings ----------
+function loadSettings(){
+  const s = JSON.parse(localStorage.getItem(KEY_SETTINGS) || '{}');
+  return Object.assign({D:60,K:3, recentN:5, biasFactor:0.5, autoDecrement:true}, s);
+}
+function saveSettings(s){ localStorage.setItem(KEY_SETTINGS, JSON.stringify(s)); }
+
+// ---------- Teas CRUD ----------
+async function getTeas(){ return idbTx(STORE_TEAS,'readonly', s=>s.getAll()); }
+async function putTea(row){ return idbTx(STORE_TEAS,'readwrite', s=>s.put(row)); }
+async function bulkPutTeas(rows){ return idbTx(STORE_TEAS,'readwrite', s=>s.bulkPut(rows)); }
+async function delTea(id){ return idbTx(STORE_TEAS,'readwrite', s=>s.delete(id)); }
+async function clearTeas(){ return idbTx(STORE_TEAS,'readwrite', s=>s.clear()); }
+
+// ---------- History ----------
+async function getHistory(){ return idbTx(STORE_HIST,'readonly', s=>s.getAll()); }
+async function addHistory(rec){ return idbTx(STORE_HIST,'readwrite', s=>s.put(rec)); }
+async function clearHistory(){ return idbTx(STORE_HIST,'readwrite', s=>s.clear()); }
+
+// ---------- UI: Tabs ----------
+function switchTab(name){
+  $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  ['draw','table','history','settings','io'].forEach(id=>{
+    $('#tab-'+id).style.display = (id===name)?'block':'none';
+  });
+}
+$$('.tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+
+// ---------- Populate today ----------
+$('#today').textContent = fmtDate(new Date());
+
+// ---------- Table rendering ----------
+function renderTeasTable(rows){
+  const tbody = $('#teaTable tbody');
+  tbody.innerHTML = '';
+  for(const r of rows){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" class="rowChk" data-id="${r.id||''}"></td>
+      <td contenteditable data-field="Name">${r.Name||''}</td>
+      <td contenteditable data-field="Brand">${r.Brand||''}</td>
+      <td contenteditable data-field="Type">${r.Type||''}</td>
+      <td>
+        <select data-field="Caffeine">
+          <option value=""></option>
+          <option ${r.Caffeine==='有'?'selected':''}>有</option>
+          <option ${r.Caffeine==='無'?'selected':''}>無</option>
+        </select>
+      </td>
+      <td contenteditable data-field="Stock">${r.Stock??1}</td>
+      <td><input type="date" data-field="BestBefore" value="${r.BestBefore||''}"></td>
+      <td contenteditable data-field="BaseWeight">${r.BaseWeight??1}</td>
+      <td><input type="checkbox" data-field="Enabled" ${r.Enabled!==false?'checked':''}></td>
+      <td contenteditable data-field="Tags">${r.Tags||''}</td>
+      <td contenteditable data-field="Notes">${r.Notes||''}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  $('#countInfo').textContent = `${rows.length} 件`;
+}
+async function loadAndRenderTeas(){
+  const rows = await getTeas();
+  renderTeasTable(rows);
+  // Populate Type filter options
+  const types = Array.from(new Set(rows.map(r=>r.Type).filter(Boolean))).sort();
+  const sel = $('#fType'); sel.innerHTML='';
+  ['（指定なし）', ...types].forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v==='（指定なし）'?'':v; opt.textContent=v;
+    sel.appendChild(opt);
+  });
+}
+
+// Save on blur/change
+$('#teaTable').addEventListener('focusout', async (e)=>{
+  const cell = e.target;
+  const tr = cell.closest('tr'); if(!tr) return;
+  const id = Number(tr.querySelector('.rowChk').dataset.id) || undefined;
+  // Recompose row from DOM
+  const row = {};
+  tr.querySelectorAll('[data-field]').forEach(el=>{
+    const key = el.dataset.field;
+    if(el.tagName==='INPUT'){
+      if(el.type==='checkbox') row[key]=el.checked;
+      else if(el.type==='date') row[key]=el.value||'';
+      else row[key]=el.value;
+    }else if(el.tagName==='SELECT'){
+      row[key] = el.value;
+    }else{
+      row[key] = el.textContent.trim();
+    }
+  });
+  // Coerce types
+  row.Stock = Math.max(0, parseInt(row.Stock||'0')||0);
+  row.BaseWeight = Math.max(0.0001, parseFloat(row.BaseWeight||'1')||1);
+  row.Enabled = !!row.Enabled;
+  row.Name = row.Name||'';
+  if(!row.Name){ return; }
+  if(id) row.id=id;
+  await putTea(row);
+  await loadAndRenderTeas();
+});
+$('#teaTable').addEventListener('change', async (e)=>{
+  if(e.target.matches('input[type="date"],input[type="checkbox"],select')){
+    const ev = new Event('focusout'); e.target.dispatchEvent(ev);
+  }
+});
+
+// Select all / delete
+$('#chkAll').addEventListener('change', e=>{
+  $$('.rowChk').forEach(c=>c.checked = e.target.checked);
+});
+$('#btnDeleteSelected').addEventListener('click', async ()=>{
+  const targets = $$('.rowChk:checked');
+  for(const c of targets){ const id = Number(c.dataset.id); if(id) await delTea(id); }
+  await loadAndRenderTeas();
+  $('#chkAll').checked=false;
+});
+
+// Add row
+$('#btnAddRow').addEventListener('click', async ()=>{
+  await putTea({Name:'', Brand:'', Type:'', Caffeine:'', Stock:1, BestBefore:'', BaseWeight:1, Enabled:true, Tags:'', Notes:''});
+  await loadAndRenderTeas();
+});
+
+// Sample data
+$('#btnSample').addEventListener('click', async ()=>{
+  const sample=[
+    {Name:'Assam Breakfast',Brand:'SampleTea',Type:'Assam',Caffeine:'有',Stock:3,BestBefore:fmtDate(new Date(Date.now()+1000*60*60*24*30)),BaseWeight:1,Enabled:true,Tags:'モーニング',Notes:'濃いめ'},
+    {Name:'Darjeeling First Flush',Brand:'SampleTea',Type:'Darjeeling',Caffeine:'有',Stock:1,BestBefore:fmtDate(new Date(Date.now()+1000*60*60*24*10)),BaseWeight:1,Enabled:true,Tags:'ストレート',Notes:''},
+    {Name:'Earl Grey',Brand:'SampleTea',Type:'Earl Grey',Caffeine:'有',Stock:2,BestBefore:fmtDate(new Date(Date.now()+1000*60*60*24*60)),BaseWeight:1,Enabled:true,Tags:'ベルガモット',Notes:''},
+    {Name:'Rooibos Vanilla',Brand:'SampleTea',Type:'Rooibos',Caffeine:'無',Stock:2,BestBefore:fmtDate(new Date(Date.now()+1000*60*60*24*45)),BaseWeight:1,Enabled:true,Tags:'夜用',Notes:''}
+  ];
+  await clearTeas(); await bulkPutTeas(sample);
+  await loadAndRenderTeas();
+});
+
+// ---------- Draw (weighted random) ----------
+function applyFilters(rows){
+  const typeSel = $('#fType'); const chosen = Array.from(typeSel.selectedOptions).map(o=>o.value).filter(v=>v);
+  const caf = $('#fCaf').value;
+  const exExpired = $('#fExcludeExpired').checked;
+  const exclBrands = ($('#fExcludeBrand').value||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>s.toLowerCase());
+  const kw = ($('#fKeyword').value||'').toLowerCase();
+  const tags = ($('#fTags').value||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>s.toLowerCase());
+  const today = new Date(); today.setHours(0,0,0,0);
+  return rows.filter(r=>{
+    if(!r.Enabled) return false;
+    if((r.Stock??0)<=0) return false;
+    if(chosen.length && !chosen.includes(r.Type||'')) return false;
+    if(caf && (r.Caffeine||'')!==caf) return false;
+    if(exExpired){
+      const d = parseDate(r.BestBefore);
+      if(d && d < today) return false;
+    }
+    if(exclBrands.length && exclBrands.includes((r.Brand||'').toLowerCase())) return false;
+    if(kw){
+      const hay = `${r.Name||''} ${r.Brand||''} ${r.Type||''} ${r.Tags||''} ${r.Notes||''}`.toLowerCase();
+      if(!hay.includes(kw)) return false;
+    }
+    if(tags.length){
+      const rs = (r.Tags||'').toLowerCase().split(',').map(s=>s.trim());
+      if(!tags.every(t=>rs.includes(t))) return false;
+    }
+    return true;
+  });
+}
+
+async function drawOne(){
+  const settings = loadSettings();
+  const rows = await getTeas();
+  const cand = applyFilters(rows);
+  if(cand.length===0){ $('#drawResult').innerHTML = '<span class="danger">候補がありません（フィルタや在庫を確認）</span>'; return; }
+  // recent bias
+  const hist = (await getHistory()).sort((a,b)=> (b.id||0)-(a.id||0));
+  const recent = hist.slice(0, settings.recentN||0).map(h=>`${h.Name}||${h.Brand}`);
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  let weights = [], total=0;
+  for(const r of cand){
+    const d = parseDate(r.BestBefore);
+    let daysLeft = d? Math.max(0, daysBetween(d, today)) : 36500; // no date -> far future
+    let urgency = clamp(1 - daysLeft / (settings.D||60), 0, 1);
+    let w = (r.BaseWeight||1) * (1 + (settings.K||3) * urgency);
+    if(daysLeft===0) w *= 1.2;
+    if(recent.includes(`${r.Name}||${r.Brand||''}`)) w *= (settings.biasFactor||0.5);
+    weights.push(w); total += w;
+  }
+  if(total<=0){ $('#drawResult').innerHTML = '<span class="danger">重みが0です。設定を見直してください。</span>'; return; }
+  // roulette
+  let pick = Math.random()*total, idx=0;
+  for(let i=0;i<weights.length;i++){ if(pick<weights[i]){ idx=i; break; } pick-=weights[i]; }
+  const win = cand[idx];
+  const badge = (()=>{
+    const d = parseDate(win.BestBefore); if(!d) return '<span class="pill">期限未設定</span>';
+    const left = Math.max(0, daysBetween(d, today));
+    return left===0? '<span class="pill" style="background:#ffe9e9;border-color:#ffc6c6">期限切れ/当日</span>'
+                   : `<span class="pill">残り ${left} 日</span>`;
+  })();
+  $('#drawResult').innerHTML = `
+    <div>
+      <div style="font-size:20px;font-weight:700">${win.Name}</div>
+      <div class="muted">${win.Brand||'-'} / ${win.Type||'-'} ${badge}</div>
+      <div class="controls" style="margin-top:6px">
+        <textarea id="userNote" class="textarea" placeholder="ひとことメモ（任意）"></textarea>
+      </div>
+      <div class="controls">
+        <button class="btn primary" id="btnConfirmDraw">確定して履歴に追加</button>
+      </div>
+    </div>
+  `;
+  $('#btnConfirmDraw').addEventListener('click', async ()=>{
+    const note = $('#userNote').value||'';
+    await addHistory({
+      Timestamp: new Date().toISOString(),
+      Name: win.Name, Brand: win.Brand||'', Type: win.Type||'', BestBefore: win.BestBefore||'',
+      WeightUsed: weights[idx], UserNote: note
+    });
+    if(loadSettings().autoDecrement){
+      // decrement stock in DB by Name+Brand match
+      const all = await getTeas();
+      const target = all.find(r=>r.id===win.id);
+      if(target){ target.Stock = Math.max(0,(target.Stock||0)-1); await putTea(target); }
+      await loadAndRenderTeas();
+    }
+    await renderHistory();
+    $('#drawResult').innerHTML = `<span class="pill">保存しました</span> ${win.Name} をお楽しみください。`;
+  });
+}
+
+// ---------- History UI ----------
+async function renderHistory(){
+  const tbody = $('#histTable tbody');
+  tbody.innerHTML='';
+  const rows = (await getHistory()).sort((a,b)=> (b.id||0)-(a.id||0));
+  $('#histInfo').textContent = `${rows.length} 件`;
+  for(const r of rows.slice(0,200)){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.Timestamp}</td><td>${r.Name}</td><td>${r.Brand||''}</td><td>${r.Type||''}</td><td>${r.BestBefore||''}</td><td>${(r.WeightUsed||0).toFixed(3)}</td><td>${(r.UserNote||'').replace(/</g,'&lt;')}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function toCsv(rows){
+  const cols = Object.keys(rows[0]||{});
+  const esc = (s)=>`"${String(s).replace(/"/g,'""')}"`;
+  const lines = [cols.join(',')].concat(rows.map(r=>cols.map(c=>esc(r[c]??'')).join(',')));
+  return lines.join('\r\n');
+}
+
+// Export buttons
+$('#btnExportHistoryCsv').addEventListener('click', async ()=>{
+  const rows = await getHistory(); if(!rows.length){ alert('履歴が空です'); return; }
+  const blob = new Blob([toCsv(rows)], {type:'text/csv'});
+  const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'history.csv'}); a.click();
+});
+
+$('#btnExportJson').addEventListener('click', async ()=>{
+  const data = {teas: await getTeas(), history: await getHistory(), settings: loadSettings()};
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'tea_data.json'}); a.click();
+});
+$('#btnExportCsv').addEventListener('click', async ()=>{
+  const teas = await getTeas(); if(!teas.length){ alert('データが空です'); return; }
+  const cols = ["Name","Brand","Type","Caffeine","Stock","BestBefore","BaseWeight","Enabled","Tags","Notes"];
+  const rows = teas.map(r=>({Name:r.Name||'',Brand:r.Brand||'',Type:r.Type||'',Caffeine:r.Caffeine||'',Stock:r.Stock||0,BestBefore:r.BestBefore||'',BaseWeight:r.BaseWeight||1,Enabled:r.Enabled!==false,Tags:r.Tags||'',Notes:r.Notes||''}));
+  const blob = new Blob([toCsv([Object.fromEntries(cols.map(c=>[c,c]))],)+ '\r\n' + rows.map(o=>cols.map(k=>`"${String(o[k]).replace(/"/g,'""')}"`).join(',')).join('\r\n')], {type:'text/csv'});
+  const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'teas.csv'}); a.click();
+});
+
+// Import
+$('#btnImport').addEventListener('click', async ()=>{
+  const f = $('#fileImport').files[0]; if(!f){ alert('ファイルを選択してください'); return; }
+  const text = await f.text();
+  if(f.name.endswith?.('.json') || f.type==='application/json' || text.trim().startsWith('{')){
+    const data = JSON.parse(text);
+    if(data.teas){ await clearTeas(); await bulkPutTeas(data.teas.map(t=>({id:undefined,...t}))); }
+    if(data.history){ await clearHistory(); for(const h of data.history){ await addHistory({id:undefined,...h}); } }
+    if(data.settings){ saveSettings(data.settings); }
+  }else{
+    // CSV: expects header as in export
+    const lines = text.split(/\r?\n/).filter(l=>l.trim());
+    const header = lines.shift().split(',').map(h=>h.replace(/^"|"$|\s+/g,''));
+    const teas=[];
+    for(const line of lines){
+      const cells = line.match(/("([^"]|"")*"|[^,]+)/g)||[];
+      const obj={};
+      header.forEach((h,i)=>{
+        let v = (cells[i]||'').replace(/^"|"$|""/g, m=> m==='""'?'"':'');
+        if(h==='Stock') v = parseInt(v||'0')||0;
+        if(h==='BaseWeight') v = parseFloat(v||'1')||1;
+        if(h==='Enabled') v = (String(v).toLowerCase()==='true');
+        obj[h]=v;
+      });
+      teas.push(Object.assign({Enabled:true},obj));
+    }
+    await clearTeas(); await bulkPutTeas(teas);
+  }
+  await loadAndRenderTeas(); await renderHistory();
+  alert('インポートしました');
+});
+
+// ---------- Settings UI ----------
+function renderSettings(){
+  const s = loadSettings();
+  $('#setD').value = s.D; $('#setK').value = s.K; $('#setRecentN').value = s.recentN; $('#setBias').value = s.biasFactor; $('#setAutoDec').checked = !!s.autoDecrement;
+}
+$('#btnSaveSettings').addEventListener('click', ()=>{
+  const s = {D:parseInt($('#setD').value)||60, K:parseFloat($('#setK').value)||3, recentN:parseInt($('#setRecentN').value)||5, biasFactor:parseFloat($('#setBias').value)||0.5, autoDecrement:$('#setAutoDec').checked};
+  saveSettings(s);
+  $('#settingsSaved').style.display='inline';
+  setTimeout(()=>$('#settingsSaved').style.display='none', 1200);
+});
+
+// Danger zone
+$('#btnClearAll').addEventListener('click', async ()=>{
+  if(!confirm('本当に全データを削除しますか？（取り消し不可）')) return;
+  await clearTeas(); await clearHistory(); localStorage.removeItem(KEY_SETTINGS);
+  await loadAndRenderTeas(); await renderHistory(); renderSettings();
+  alert('削除しました');
+});
+
+// Draw button
+$('#btnDraw').addEventListener('click', drawOne);
+
+// Initial
+(async function init(){
+  renderSettings();
+  await loadAndRenderTeas();
+  await renderHistory();
+})();
+
+// ---------- PWA ----------
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(console.warn);
+  });
+}
+</script>
+</body>
+</html>

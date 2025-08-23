@@ -27,25 +27,53 @@
   th,td{border-bottom:1px solid #eef1f6;padding:6px;text-align:left;font-size:14px;vertical-align:top}
   th{background:#fafbfc;position:sticky;top:0;z-index:1}
 
-  /* 入力可能セル（薄グレー → フォーカス白） */
+  /* 入力セルの見た目 */
   td.editable,
-  td.editable input[type="date"] {
-    background:#f8f9fa;
-    border-radius:4px;
-  }
+  td.editable input[type="date"]{background:#f1f3f6;border-radius:6px}
   td.editable:focus-within,
-  td.editable input[type="date"]:focus {
-    background:#fff;border:1px solid #666;outline:none;
+  td.editable input[type="date"]:focus{background:#fff;border:1px solid #666;outline:none}
+
+  /* テーブルのレイアウト固定＋列幅 */
+  #teaTable{table-layout:fixed}
+  #teaTable .col-name   { width: 280px; }  /* 商品名 */
+  #teaTable .col-brand  { width: 160px; }
+  #teaTable .col-type   { width: 200px; }
+  #teaTable .col-caf    { width: 90px; }
+  #teaTable .col-stock  { width: 90px; }
+  #teaTable .col-date   { width: 160px; }
+  #teaTable .col-note   { width: 1fr; }    /* 残り領域 */
+  #teaTable .col-weight { width: 120px; }
+  #teaTable td,#teaTable th{overflow:hidden}
+
+  /* セル内フォームはセル幅にフィット */
+  #teaTable input[type="text"],
+  #teaTable input[type="number"],
+  #teaTable input[type="date"],
+  #teaTable select{
+    width:100%; max-width:100%; box-sizing:border-box;
+    border:1px solid #c8cdd6; border-radius:6px; background:#fff; padding:6px 8px;
   }
-  /* フォーム要素の見た目 */
+  #teaTable select{padding:4px 8px}
+  #teaTable input[type="text"], #teaTable input[type="number"]{background:#fff}
+  #teaTable input[type="text"]:focus,
+  #teaTable input[type="number"]:focus,
+  #teaTable select:focus{outline:none;border-color:#666}
+
+  /* 商品名は省略表示、メモは折り返し */
+  #teaTable td:nth-child(1) input[type="text"]{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+  #teaTable td:nth-child(7) input[type="text"]{white-space:normal;text-overflow:clip;overflow:visible}
+
+  /* スマホ調整 */
+  @media (max-width:640px){
+    #teaTable .col-name{width:220px}
+    #teaTable .col-type{width:180px}
+  }
+
+  /* 通常フォーム類 */
   select{background:#fff;padding:4px;border:1px solid #ccc;border-radius:4px;cursor:pointer}
   select:focus{border-color:#666;outline:none}
-  input[type="text"], input[type="number"]{
-    width:100%; padding:6px 8px; border:1px solid #c8cdd6; border-radius:6px; background:#fff;
-  }
-  input[type="text"]:focus, input[type="number"]:focus{
-    outline:none; border-color:#666; background:#fff;
-  }
+  input[type="text"],input[type="number"]{width:100%;padding:6px 8px;border:1px solid #c8cdd6;border-radius:6px;background:#fff}
+  input[type="text"]:focus,input[type="number"]:focus{outline:none;border-color:#666;background:#fff}
   textarea{border:1px solid #c8cdd6;border-radius:6px}
 
   .toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;opacity:0;transition:opacity .3s;z-index:999}
@@ -61,6 +89,7 @@
   .col{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff}
   .col.dragging{opacity:.6}
   .col header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+
   /* 6点グリップ（サイコロの6） */
   .grip{width:16px;height:16px;position:relative;flex:0 0 16px}
   .grip::before{
@@ -113,12 +142,9 @@
       <label>フリーワード <input id="fKeyword" placeholder="商品名・種類・メモで検索"></label>
       <span id="countInfo" class="muted"></span>
     </div>
-
-    <!-- フィルタ直下に抽選ボタン -->
     <div style="margin:12px 0;">
       <button id="btnDraw" class="btn primary">抽選する</button>
     </div>
-
     <hr />
     <div id="drawResult">まだ抽選していません。</div>
     <div id="memoArea" style="display:none;margin-top:8px">
@@ -131,6 +157,16 @@
   <section id="tab-table" class="card" style="display:none">
     <div style="overflow:auto;max-height:60vh">
       <table id="teaTable">
+        <colgroup>
+          <col class="col-name">
+          <col class="col-brand">
+          <col class="col-type">
+          <col class="col-caf">
+          <col class="col-stock">
+          <col class="col-date">
+          <col class="col-note">
+          <col class="col-weight">
+        </colgroup>
         <thead><tr>
           <th>商品名<span class="muted">（必須）</span></th>
           <th>ブランド</th>
@@ -141,7 +177,7 @@
           <th>メモ</th>
           <th>
             基本重み
-            <span class="info" title="通常は 1 のままでOK。数値を上げると当たりやすくなり、下げると当たりにくくなります（例：2 で約2倍、0.5 で約半分）。">
+            <span class="info" title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります（例：2 で約2倍、0.5 で約半分）。">
               <span class="i">i</span>
             </span>
           </th>
@@ -179,7 +215,7 @@
       <button id="btnClearHist" class="btn danger">履歴と重み設定を初期化</button>
     </div>
 
-    <!-- カスタム（説明＋計算式） -->
+    <!-- カスタム -->
     <div id="sub-custom" style="display:none">
       <div class="row" style="flex-wrap:wrap;align-items:center;gap:16px">
         <label>D（日） <input id="setD" type="number" min="1" value="60"></label>
@@ -189,13 +225,13 @@
       </div>
       <div style="margin-top:8px">
         <p><b>重みの考え方</b>：<code>重み = 基本重み × (1 + K × 緊急度) × バイアス</code></p>
-        <p><b>緊急度</b>：<code>緊急度 = clamp(1 − 残日数 / D, 0, 1)</code>（＝「D日」を100%と見たときの進み具合）。Dを小さくすると早い段階から効きやすく、Kを大きくすると近いほど強くなります。</p>
+        <p><b>緊急度</b>：<code>緊急度 = clamp(1 − 残日数 / D, 0, 1)</code>（＝「D日」を100%と見たときの進み具合）。Dを小さくすると早期から効きやすく、Kを大きくすると期限接近時の上乗せが強くなります。</p>
         <p><b>バイアス</b>：<code>biasFactor</code> は「直近 <code>recentN</code> 回で当選した銘柄」の重みをどれだけ下げるか。例：0.5 なら半分、1.0 なら下げない。</p>
       </div>
       <p class="muted">※変更は即保存され、次回抽選から反映されます</p>
     </div>
 
-    <!-- 種類(産地) 管理（編集可・D&D並び替え・青線可視化・×削除・カテゴリ名編集） -->
+    <!-- 種類(産地) 管理 -->
     <div id="sub-types" style="display:none">
       <div id="typeBoard" class="board"></div>
       <div class="row">
@@ -204,7 +240,7 @@
       </div>
     </div>
 
-    <!-- ブランド 管理（項目ごとに6点グリップ、ヘッダにはグリップなし） -->
+    <!-- ブランド 管理 -->
     <div id="sub-brands" style="display:none">
       <div id="brandBoard" class="board"></div>
       <div class="row">
@@ -228,7 +264,6 @@ let isDrawing=false; function setBtnLabel(label){$("#btnDraw").textContent=label
 function loadSettings(){
   const def={"D":60,"K":2,"recentN":5,"biasFactor":0.5,"mode":"recommended"};
   const s = JSON.parse(localStorage.getItem("settings")||JSON.stringify(def));
-  // デフォルトを「おすすめ」に
   if(!s.mode) s.mode="recommended";
   return s;
 }
@@ -239,7 +274,7 @@ let settings=loadSettings();
 function loadBrands(){return JSON.parse(localStorage.getItem("brands")||"[]");}
 function saveBrands(b){localStorage.setItem("brands",JSON.stringify(b));}
 
-/* ========= TYPE SCHEMA (editable) ========= */
+/* ========= TYPE SCHEMA ========= */
 const DEFAULT_TYPES = {
   "インド": ["アッサム","ダージリン","ニルギリ","ドアーズ"],
   "スリランカ": ["ディンブラ","ヌワラエリヤ","キャンディ","ウバ","ウダプセラワ","ルフナ"],
@@ -247,30 +282,25 @@ const DEFAULT_TYPES = {
   "フレーバー/ブレンド": ["ブレンド","アールグレイ","フレーバード","ルイボス"]
 };
 function loadTypeSchema(){
-  // 既存データ読み込み（レガシー移行も見る）
   let raw = localStorage.getItem("typeSchema");
   if(!raw){
-    const legacy = localStorage.getItem("types"); // 旧キーを使っていた場合の救済
-    if(legacy){ localStorage.setItem("typeSchema", legacy); raw = legacy; }
+    const legacy = localStorage.getItem("types");
+    if(legacy){ localStorage.setItem("typeSchema", legacy); raw=legacy; }
   }
-  let obj = null;
-  try { obj = raw ? JSON.parse(raw) : null; } catch(e){ obj = null; }
-
-  // 空・壊れている・キーなし → デフォルトを注入
-  if(!obj || typeof obj !== "object" || Object.keys(obj).length === 0){
+  let obj=null; try{ obj = raw ? JSON.parse(raw) : null; }catch(e){ obj=null; }
+  if(!obj || typeof obj!=="object" || Object.keys(obj).length===0){
     obj = JSON.parse(JSON.stringify(DEFAULT_TYPES));
     localStorage.setItem("typeSchema", JSON.stringify(obj));
   }
   return obj;
 }
-
 function saveTypeSchema(obj){ localStorage.setItem("typeSchema", JSON.stringify(obj)); }
 
 /* ========= SELECT RENDER ========= */
 function renderBrandOptions(sel, selected=""){
   const brands=loadBrands();
   sel.innerHTML = '';
-  sel.appendChild(new Option('---','')); // 初期表示は ---
+  sel.appendChild(new Option('---',''));
   brands.forEach(b=> sel.appendChild(new Option(b,b)) );
   sel.appendChild(new Option("＋ 追加する…","__add_brand__"));
   sel.value = selected || "";
@@ -291,14 +321,13 @@ function renderBrandOptions(sel, selected=""){
 function renderTypeSelect(sel, selected=""){
   const schema = loadTypeSchema();
   sel.innerHTML = '';
-  sel.appendChild(new Option('---','')); // 初期表示
+  sel.appendChild(new Option('---','')); // テーブル側の初期表示
 
-  // 大カテゴリをそのまま選べる＋下層はインデント付きで連続表示
+  // 大カテゴリ（選択可能）＋下層はフラット表示（インデント）
   Object.keys(schema).forEach(cat=>{
     sel.appendChild(new Option(cat, cat)); // 大カテゴリ
     schema[cat].forEach(name=>{
-      const o = new Option("　┗ " + name, name); // 見た目だけインデント
-      sel.appendChild(o);
+      sel.appendChild(new Option("　┗ " + name, name));
     });
   });
 
@@ -308,7 +337,7 @@ function renderTypeSelect(sel, selected=""){
     if(sel.value==="__add_type__"){
       const schema2 = loadTypeSchema();
       const cats = Object.keys(schema2);
-      const chosenCat = prompt("追加先の大カテゴリー名を入力（既存名でも新規でもOK）\n既存: " + cats.join(" / "));
+      const chosenCat = prompt("追加先の大カテゴリー名を入力（既存名でも新規でもOK）\n既存: "+cats.join(" / "));
       if(!chosenCat){ sel.value=""; return; }
       const item = prompt("追加する種類(産地)名を入力");
       if(!item){ sel.value=""; return; }
@@ -321,21 +350,24 @@ function renderTypeSelect(sel, selected=""){
     }
   };
 }
-
 function renderDrawTypeFilter(sel, selected=""){
   const schema = loadTypeSchema();
   sel.innerHTML = '';
-  sel.appendChild(new Option('すべて','')); // 初期は「すべて」
-
+  sel.appendChild(new Option('すべて','')); // 抽選画面の初期
   Object.keys(schema).forEach(cat=>{
-    sel.appendChild(new Option(cat, cat)); // 大カテゴリ
+    sel.appendChild(new Option(cat, cat));
     schema[cat].forEach(name=>{
-      const o = new Option("　┗ " + name, name);
-      sel.appendChild(o);
+      sel.appendChild(new Option("　┗ " + name, name));
     });
   });
-
   sel.value = selected || "";
+}
+function refreshAllTypeSelects(){
+  renderDrawTypeFilter($("#fType"), $("#fType").value);
+  $$(".typeSel").forEach(s=> renderTypeSelect(s, s.value) );
+}
+function renderAllBrandSelects(){
+  $$(".brandSel").forEach(s=> renderBrandOptions(s, s.value) );
 }
 
 /* ========= TABLE (5 empty rows) ========= */
@@ -375,8 +407,8 @@ let currentPick=null;
 function typesInCategory(cat){ const s=loadTypeSchema(); return s[cat]||[]; }
 function drawTea(){
   const rows=$$("#teaBody tr");
-  const fType=$("#fType").value; // "" or カテゴリ名 or 具体名
-  const fCaf=$("#fCaf").value;   // ""=すべて / "あり" / "なし"
+  const fType=$("#fType").value;   // "" or カテゴリ名 or 具体名
+  const fCaf=$("#fCaf").value;     // ""=すべて / "あり" / "なし"
   const kw = ($("#fKeyword").value||"").toLowerCase();
 
   let cands=[];
@@ -384,29 +416,27 @@ function drawTea(){
     const name=(r.cells[0].querySelector("input")?.value||"").trim();
     if(!name) return; // 商品名は必須
 
-    const brand=r.cells[1].querySelector("select").value; // 空でもOK
-    const type=r.cells[2].querySelector("select").value;  // 空 or カテゴリ名 or 具体名
+    const brand=r.cells[1].querySelector("select").value; // 空OK
+    const type=r.cells[2].querySelector("select").value;  // 空 or カテゴリ or 具体
     const caf=r.cells[3].querySelector("select").value||"あり";
     const stock=r.cells[4].querySelector("select").value||"あり";
-    const bestBefore=r.cells[5].querySelector("input").value; // 空OK
+    const bestBefore=r.cells[5].querySelector("input").value;
     const note=(r.cells[6].querySelector("input")?.value||"").trim();
     const baseW=parseFloat(r.cells[7].querySelector("input").value||"1");
 
     if(stock!=="あり") return;
 
-    // 種類(産地)フィルタ
+    // 種類フィルタ
     if(fType){
       const catList = typesInCategory(fType);
-      if(catList.length){
-        if(!(catList.includes(type) || type===fType)) return;
-      }else{
-        if(type!==fType) return;
-      }
+      if(catList.length){ if(!(catList.includes(type) || type===fType)) return; }
+      else{ if(type!==fType) return; }
     }
-    // カフェイン：すべてならフィルタしない
+
+    // カフェインフィルタ（すべて=無条件）
     if(fCaf && caf!==fCaf) return;
 
-    // フリーワード（商品名・種類・メモ）
+    // フリーワード
     const hay=(name+" "+type+" "+note).toLowerCase();
     if(kw && !hay.includes(kw)) return;
 
@@ -422,13 +452,11 @@ function drawTea(){
 
   const weights=cands.map(c=>{
     if(mode==="random") return 1;
-    // 期限未設定 → 基本重みのみ
-    if(!c.bestBefore) return c.baseW;
+    if(!c.bestBefore) return c.baseW; // 期限未設定→基本重みのみ
     const daysLeft = Math.floor((new Date(c.bestBefore)-now)/(1000*60*60*24));
     let urgency = 0;
     if(daysLeft < D) urgency = Math.max(0, Math.min(1, 1 - (daysLeft/D)));
     let w = c.baseW * (1 + K * urgency);
-    // recentN補正
     const recent = hist.slice(- (settings.recentN||0));
     if(recent.find(x=>x.name===c.name)) w *= (settings.biasFactor ?? 0.5);
     return w;
@@ -437,8 +465,7 @@ function drawTea(){
   const total=weights.reduce((a,b)=>a+b,0);
   let r=Math.random()*total, chosen=null;
   for(let i=0;i<cands.length;i++){ r-=weights[i]; if(r<=0){ chosen=cands[i]; break; } }
-  currentPick=chosen;
-  return chosen;
+  currentPick=chosen; return chosen;
 }
 
 /* 抽選ボタン */
@@ -460,8 +487,7 @@ $("#btnSave").addEventListener("click",()=>{
   saveHist(hist); renderHist();
   toast("保存しました");
   $("#drawResult").textContent="まだ抽選していません。";$("#memoArea").style.display="none";$("#memoInput").value="";
-  setBtnLabel("抽選する");
-  currentPick=null;
+  setBtnLabel("抽選する"); currentPick=null;
 });
 
 /* 履歴CSV */
@@ -480,7 +506,6 @@ $("#btnClearHist").addEventListener("click",()=>{
   if(confirm("履歴と重み設定を初期化します。よろしいですか？")){
     localStorage.removeItem("history"); localStorage.removeItem("settings");
     settings=loadSettings(); renderHist(); toast("初期化しました");
-    // モード初期値は「おすすめ」
     $("#mode").value="recommended";
   }
 });
@@ -529,7 +554,7 @@ function makeTypeColumn(catName, items){
   col.className="col"; col.draggable=true; col.dataset.cat=catName;
 
   const head=document.createElement("header");
-  const grip=document.createElement("span"); grip.className="grip"; // 6点（サイコロ6）
+  const grip=document.createElement("span"); grip.className="grip"; // 6点
   const nameSpan=document.createElement("span"); nameSpan.className="cat-name"; nameSpan.textContent=catName; nameSpan.contentEditable=true;
   nameSpan.addEventListener("blur",()=>{
     const sc=loadTypeSchema(); const old=col.dataset.cat; const nv=nameSpan.textContent.trim()||old;
@@ -575,7 +600,7 @@ function makeTypeColumn(catName, items){
     list.appendChild(itemEl);
   });
 
-  // 項目追加
+  // 追加
   const addWrap=document.createElement("div"); addWrap.className="row";
   const inp=document.createElement("input"); inp.placeholder="項目を追加"; inp.style.cssText="flex:1;padding:6px;border:1px solid #ccc;border-radius:6px";
   const btn=document.createElement("button"); btn.className="btn"; btn.textContent="＋ 追加";
@@ -591,16 +616,14 @@ function makeTypeColumn(catName, items){
     newEl.addEventListener("dragend",()=>{newEl.classList.remove("dragging");});
     list.appendChild(newEl); inp.value=""; saveTypesFromBoard(); refreshAllTypeSelects(); toast("追加しました");
   });
-  addWrap.appendChild(inp); addWrap.appendChild(btn);
-  col.appendChild(addWrap);
+  addWrap.appendChild(inp); addWrap.appendChild(btn); col.appendChild(addWrap);
 
-  // カテゴリ列のドラッグ（挿入位置の青線を全体で可視化）
+  // カテゴリ列のドラッグ（可視化）
   col.addEventListener("dragstart",(e)=>{ if(e.target===col){ col.classList.add("dragging"); }});
   col.addEventListener("dragend",()=>{ col.classList.remove("dragging"); saveTypesFromBoard(); refreshAllTypeSelects(); });
 
   return col;
 }
-// カテゴリ入れ替え（青線表示）
 (function enableTypeColumnDnD(){
   const board=$("#typeBoard");
   let boardDropLine=document.createElement("div");
@@ -651,7 +674,7 @@ $("#btnAddCat").addEventListener("click",()=>{
   saveTypeSchema(sc); $("#newCatName").value=""; buildTypeBoard(); refreshAllTypeSelects(); toast("カテゴリーを追加しました");
 });
 
-/* ====== ブランド 管理（項目ごとに6点グリップ、ヘッダにグリップなし） ====== */
+/* ====== ブランド 管理（項目にのみ6点グリップ） ====== */
 function buildBrandBoard(){
   const board=$("#brandBoard"); board.innerHTML="";
   const brands=loadBrands();
@@ -659,15 +682,14 @@ function buildBrandBoard(){
 
   const head=document.createElement("header");
   const title=document.createElement("span"); title.textContent="ブランド一覧";
-  head.appendChild(title);
-  col.appendChild(head);
+  head.appendChild(title); col.appendChild(head);
 
   const list=document.createElement("div"); list.className="list"; col.appendChild(list);
   const dropLine=document.createElement("div"); dropLine.className="drop-line"; list.appendChild(dropLine);
 
   brands.forEach(b=>{
     const el=document.createElement("div"); el.className="item"; el.draggable=true;
-    const ig=document.createElement("span"); ig.className="grip"; // 6点グリップ（項目のみ）
+    const ig=document.createElement("span"); ig.className="grip"; // 項目のみグリップ
     const label=document.createElement("span"); label.className="label"; label.textContent=b;
     const x=document.createElement("button"); x.className="del"; x.textContent="×";
     x.addEventListener("click",()=>{ el.remove(); saveBrandsFromBoard(); renderAllBrandSelects(); toast("削除しました"); });
@@ -701,8 +723,6 @@ function saveBrandsFromBoard(){
   const arr=Array.from(list.querySelectorAll(".item .label")).map(x=>x.textContent);
   saveBrands(arr);
 }
-
-/* 追加：ブランド名 */
 $("#btnAddBrandName").addEventListener("click",()=>{
   const v=$("#newBrandName").value.trim(); if(!v) return;
   const arr=loadBrands(); if(!arr.includes(v)) arr.push(v);
@@ -716,9 +736,7 @@ function renderAll(){
   renderDrawTypeFilter($("#fType"));
   renderAllBrandSelects();
   refreshAllTypeSelects();
-  // 抽選モード初期はおすすめ
   $("#mode").value = settings.mode || "recommended";
-  // 抽選ページ：カフェインは「すべて」
   $("#fCaf").value = "";
 }
 renderAll();

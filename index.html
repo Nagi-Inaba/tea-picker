@@ -342,28 +342,32 @@ function saveTypeSchema(obj){
 
 /* ========= SELECT RENDER ========= */
 function renderBrandOptions(sel, selected=""){
-  const brands=loadBrands();
-  sel.innerHTML = '';
-  sel.appendChild(new Option('---',''));
-  brands.forEach(b=> sel.appendChild(new Option(b,b)) );
-  sel.appendChild(new Option("＋ 追加する…","__add_brand__"));
+  const brands = loadBrands();
+  sel.innerHTML = "";
+  sel.appendChild(new Option("---", ""));
+  brands.forEach(b => sel.appendChild(new Option(b, b)));
+  sel.appendChild(new Option("＋ 追加する…", "__add_brand__"));
   sel.value = selected || "";
-  sel.onchange = ()=>{
-    if(sel.value==="__add_brand__"){
-      const v = prompt("追加するブランド名を入力してください");
-    if(v && v.trim()){
-  const list = loadBrands();
-  if(!list.includes(v)) { list.push(v); saveBrands(list); }
-  renderAllBrandSelects();
-  sel.value = v;
-  toast("ブランドを追加しました");
-}else{
-  sel.value = "";
-}
 
+  sel.onchange = () => {
+    if (sel.value !== "__add_brand__") return;
+
+    const v = prompt("追加するブランド名を入力してください");
+    if (v && v.trim()) {
+      const list = loadBrands();
+      if (!list.includes(v)) {
+        list.push(v);
+        saveBrands(list);
+      }
+      renderAllBrandSelects();
+      sel.value = v;
+      toast("ブランドを追加しました");
+    } else {
+      sel.value = "";
     }
   };
 }
+
 
 function renderTypeSelect(sel, selected=""){
   const schema = loadTypeSchema();

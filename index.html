@@ -247,10 +247,23 @@ const DEFAULT_TYPES = {
   "フレーバー/ブレンド": ["ブレンド","アールグレイ","フレーバード","ルイボス"]
 };
 function loadTypeSchema(){
-  let s = localStorage.getItem("typeSchema");
-  if(!s){ localStorage.setItem("typeSchema", JSON.stringify(DEFAULT_TYPES)); s = JSON.stringify(DEFAULT_TYPES); }
-  return JSON.parse(s);
+  // 既存データ読み込み（レガシー移行も見る）
+  let raw = localStorage.getItem("typeSchema");
+  if(!raw){
+    const legacy = localStorage.getItem("types"); // 旧キーを使っていた場合の救済
+    if(legacy){ localStorage.setItem("typeSchema", legacy); raw = legacy; }
+  }
+  let obj = null;
+  try { obj = raw ? JSON.parse(raw) : null; } catch(e){ obj = null; }
+
+  // 空・壊れている・キーなし → デフォルトを注入
+  if(!obj || typeof obj !== "object" || Object.keys(obj).length === 0){
+    obj = JSON.parse(JSON.stringify(DEFAULT_TYPES));
+    localStorage.setItem("typeSchema", JSON.stringify(obj));
+  }
+  return obj;
 }
+
 function saveTypeSchema(obj){ localStorage.setItem("typeSchema", JSON.stringify(obj)); }
 
 /* ========= SELECT RENDER ========= */
@@ -278,21 +291,24 @@ function renderBrandOptions(sel, selected=""){
 function renderTypeSelect(sel, selected=""){
   const schema = loadTypeSchema();
   sel.innerHTML = '';
-  sel.appendChild(new Option('---','')); // 初期表示は ---
-  // 大カテゴリは選択可能、下層は optgroup（ラベルは非表示に）
+  sel.appendChild(new Option('---','')); // 初期表示
+
+  // 大カテゴリをそのまま選べる＋下層はインデント付きで連続表示
   Object.keys(schema).forEach(cat=>{
-    sel.appendChild(new Option(cat, cat)); // 大カテゴリ自体を選べる
-    const og = document.createElement("optgroup"); og.label = ""; // ラベル非表示で重複感をなくす
-    schema[cat].forEach(name=> og.appendChild(new Option(name,name)) );
-    sel.appendChild(og);
+    sel.appendChild(new Option(cat, cat)); // 大カテゴリ
+    schema[cat].forEach(name=>{
+      const o = new Option("　┗ " + name, name); // 見た目だけインデント
+      sel.appendChild(o);
+    });
   });
+
   sel.appendChild(new Option("＋ 追加する…","__add_type__"));
   sel.value = selected || "";
   sel.onchange = ()=>{
     if(sel.value==="__add_type__"){
       const schema2 = loadTypeSchema();
       const cats = Object.keys(schema2);
-      const chosenCat = prompt("追加先の大カテゴリー名を入力（既存名でも新規でもOK）\n既存: "+cats.join(" / "));
+      const chosenCat = prompt("追加先の大カテゴリー名を入力（既存名でも新規でもOK）\n既存: " + cats.join(" / "));
       if(!chosenCat){ sel.value=""; return; }
       const item = prompt("追加する種類(産地)名を入力");
       if(!item){ sel.value=""; return; }
@@ -305,24 +321,21 @@ function renderTypeSelect(sel, selected=""){
     }
   };
 }
+
 function renderDrawTypeFilter(sel, selected=""){
   const schema = loadTypeSchema();
   sel.innerHTML = '';
-  sel.appendChild(new Option('すべて','')); // 抽選画面の初期は「すべて」
+  sel.appendChild(new Option('すべて','')); // 初期は「すべて」
+
   Object.keys(schema).forEach(cat=>{
-    sel.appendChild(new Option(cat, cat));
-    const og = document.createElement("optgroup"); og.label = ""; // ラベル非表示
-    schema[cat].forEach(name=> og.appendChild(new Option(name,name)) );
-    sel.appendChild(og);
+    sel.appendChild(new Option(cat, cat)); // 大カテゴリ
+    schema[cat].forEach(name=>{
+      const o = new Option("　┗ " + name, name);
+      sel.appendChild(o);
+    });
   });
+
   sel.value = selected || "";
-}
-function refreshAllTypeSelects(){
-  renderDrawTypeFilter($("#fType"), $("#fType").value);
-  $$(".typeSel").forEach(s=> renderTypeSelect(s, s.value) );
-}
-function renderAllBrandSelects(){
-  $$(".brandSel").forEach(s=> renderBrandOptions(s, s.value) );
 }
 
 /* ========= TABLE (5 empty rows) ========= */

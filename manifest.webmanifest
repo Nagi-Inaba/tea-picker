@@ -1,6 +1,6 @@
 {
-  "name": "紅茶抽選（シンプル版）",
-  "short_name": "紅茶抽選",
+  "name": "TeaChoice",
+  "short_name": "TeaChoice",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",

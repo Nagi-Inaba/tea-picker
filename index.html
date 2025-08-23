@@ -7,8 +7,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#ffffff">
 <style>
-  :root{--pad:12px;--radius:10px;--shadow:0 2px 12px rgba(0,0,0,.08);}
-  body{margin:0;background:#f7f8fa;color:#111;font-family:system-ui,Roboto,"Noto Sans JP",sans-serif;}
+  :root{--pad:12px;--radius:10px;--shadow:0 2px 12px rgba(0,0,0,.08);--line:#2b7cff;}
+  body{margin:0;background:#f7f8fa;color:#111;font-family:system-ui,Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;}
   header{position:sticky;top:0;background:#fff;padding:10px var(--pad);box-shadow:var(--shadow);z-index:2;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   header h1{font-size:18px;margin:0;flex:1}
   button,select,input,textarea{font-size:16px}
@@ -39,41 +39,39 @@
   td[contenteditable="true"]:focus,
   td.editable input[type="date"]:focus,
   td.editable textarea:focus {
-    background:#fff;
-    border:1px solid #666;
-    outline:none;
+    background:#fff;border:1px solid #666;outline:none;
   }
   /* セレクト */
-  select {
-    background:#fff;
-    padding:4px;
-    border:1px solid #ccc;
-    border-radius:4px;
-    cursor:pointer;
-  }
+  select{background:#fff;padding:4px;border:1px solid #ccc;border-radius:4px;cursor:pointer}
   select:focus{border-color:#666;outline:none}
   .toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;opacity:0;transition:opacity .3s;z-index:999}
   .toast.show{opacity:1}
   .fab{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;border:none;border-radius:50%;width:56px;height:56px;font-size:24px;box-shadow:var(--shadow);cursor:pointer;display:none}
   @media(max-width:768px){.fab{display:block}}
   .muted{opacity:.75}
-  /* 管理ボード（種類・ブランド） */
-  .board{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-  .col{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff}
-  .col.dragging{opacity:.6}
-  .col h4{margin:0 0 8px 0;display:flex;justify-content:space-between;align-items:center}
-  .list{min-height:40px;border:1px dashed #e5e7eb;border-radius:8px;padding:6px;background:#fafafa}
-  .item{background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:6px;margin:6px 0;cursor:grab}
-  .item.dragging{opacity:.6}
-  .row{display:flex;gap:6px;margin-top:6px}
   .info{display:inline-flex;gap:6px;align-items:center}
   .info .i{display:inline-block;width:16px;height:16px;border:1px solid #aaa;border-radius:50%;text-align:center;line-height:16px;font-size:12px;cursor:help}
+  /* 管理ボード（種類・ブランド） */
+  .board{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .col{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff}
+  .col.dragging{opacity:.6}
+  .col header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .grip{font-family:monospace;letter-spacing:1px;color:#999;cursor:grab;user-select:none}
+  .cat-name[contenteditable]{padding:4px;border-radius:6px}
+  .cat-name[contenteditable]:focus{background:#fff;border:1px solid #666;outline:none}
+  .list{min-height:40px;border:1px dashed #e5e7eb;border-radius:8px;padding:6px;background:#fafafa;position:relative}
+  .drop-line{position:absolute;height:2px;background:var(--line);left:6px;right:6px;display:none}
+  .item{background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:6px;margin:6px 0;display:flex;align-items:center;gap:8px}
+  .item .grip{cursor:grab}
+  .item .label{flex:1}
+  .item .del{border:none;background:transparent;color:#b00020;font-size:18px;cursor:pointer}
+  .row{display:flex;gap:6px;margin-top:6px}
 </style>
 </head>
 <body>
 <header>
   <h1>TeaChoice</h1>
-  <button id="btnDraw" class="btn primary">抽選する</button>
+  <!-- 抽選ボタンは抽選タブ内（フィルタ直下）に配置 -->
 </header>
 
 <div class="wrap">
@@ -92,13 +90,19 @@
       </label>
       <label>カフェイン
         <select id="fCaf">
-          <option value="有" selected>有</option>
-          <option value="無">無</option>
+          <option value="あり" selected>あり</option>
+          <option value="なし">なし</option>
         </select>
       </label>
       <label>フリーワード <input id="fKeyword" placeholder="商品名・種類・メモで検索"></label>
       <span id="countInfo" class="muted"></span>
     </div>
+
+    <!-- ★ フィルタ直下に抽選ボタン -->
+    <div style="margin:12px 0;">
+      <button id="btnDraw" class="btn primary">抽選する</button>
+    </div>
+
     <hr />
     <div id="drawResult">まだ抽選していません。</div>
     <div id="memoArea" style="display:none;margin-top:8px">
@@ -121,7 +125,7 @@
           <th>メモ</th>
           <th>
             基本重み
-            <span class="info" title="抽選の基礎確率。基本は 1 のままでOK。大きくすると出やすく、0.5 などで出にくくできます。">
+            <span class="info" title="抽選の基礎確率（通常は 1 のままでOK）。計算式: 重み = 基本重み × (1 + K × 緊急度) × バイアス。緊急度 = clamp(1 − 残日数 / D, 0, 1)。D を小さくすると早く効き、K を大きくすると期限が近い品の重みが増えます。期限未設定は 基本重み のみで計算。">
               <span class="i">i</span>
             </span>
           </th>
@@ -159,7 +163,7 @@
       <button id="btnClearHist" class="btn danger">履歴と重み設定を初期化</button>
     </div>
 
-    <!-- カスタム（旧 上級設定） -->
+    <!-- カスタム（説明＋計算式） -->
     <div id="sub-custom" style="display:none">
       <div class="row" style="flex-wrap:wrap;align-items:center;gap:16px">
         <label>D（日） <input id="setD" type="number" min="1" value="60"></label>
@@ -168,18 +172,17 @@
         <label>biasFactor <input id="setBias" type="number" step="0.1" value="0.5"></label>
       </div>
       <div style="margin-top:8px">
-        <p><b>D（日）</b>：期限が近いほど重くする効果が立ち上がる範囲。例）D=60：残60日→0、残30日→0.5、当日→1</p>
-        <p><b>K（強調係数）</b>：期限が近い時の増やし方。例）K=2：最大で約3倍（=1+2）</p>
-        <p><b>recentN</b>：直近N回に当たった銘柄を出にくくする回数。例）5なら直近5回分が弱まる</p>
-        <p><b>biasFactor</b>：その下げ幅。例）0.5で半分、1.0で無効</p>
-        <p><b>基本重み</b>：各銘柄ごとの基礎確率。通常は<strong>1のままでOK</strong>／2で出やすく／0.5で出にくく</p>
+        <p><b>計算式</b>：<code>重み = 基本重み × (1 + K × 緊急度) × バイアス</code></p>
+        <p><b>緊急度</b>：<code>clamp(1 − 残日数 / D, 0, 1)</code></p>
+        <p><b>D と K の関係</b>：D を小さくすると「早めに強く効き」やすくなり、K を大きくすると「最大時の押し増し量」が増えます（例：K=2 → 最大 1+2=3 倍）。</p>
+        <p>※ 期限未設定の品は <b>基本重みのみ</b>で抽選します。</p>
       </div>
-      <p class="muted">※値を変更すると即保存され、次回抽選から反映されます</p>
+      <p class="muted">※変更は即保存され、次回抽選から反映されます</p>
     </div>
 
-    <!-- 種類(産地) 管理（編集可・D&D並び替え） -->
+    <!-- 種類(産地) 管理（編集可・D&D並び替え・挿入位置表示・×削除・カテゴリ名編集） -->
     <div id="sub-types" style="display:none">
-      <p class="muted">大カテゴリーと項目はどちらも編集できます。ドラッグ＆ドロップで並び替え／別カテゴリへ移動、ダブルクリックで削除、下の入力で追加。</p>
+      <p class="muted">行頭の<span class="grip">••••••</span>をつかむと、<b>カテゴリー</b>も<b>項目</b>も並び替え可能。ドラッグ中は挿入位置に青いラインが出ます。カテゴリー名はクリックで編集、×で削除できます。</p>
       <div id="typeBoard" class="board"></div>
       <div class="row">
         <input id="newCatName" placeholder="新しい大カテゴリー名を追加（例：台湾／アフリカ）" style="padding:6px;border:1px solid #ccc;border-radius:6px;flex:1">
@@ -187,9 +190,9 @@
       </div>
     </div>
 
-    <!-- ブランド 管理（編集可・D&D並び替え） -->
+    <!-- ブランド 管理（編集可・D&D並び替え・挿入位置表示・×削除） -->
     <div id="sub-brands" style="display:none">
-      <p class="muted">ブランドはリストとして管理します。ドラッグ＆ドロップで並び替え、ダブルクリックで削除、下の入力で追加。</p>
+      <p class="muted">行頭の<span class="grip">••••••</span>でドラッグして並び替え。×で削除、下の入力で追加できます。</p>
       <div id="brandBoard" class="board"></div>
       <div class="row">
         <input id="newBrandName" placeholder="ブランド名を追加" style="padding:6px;border:1px solid #ccc;border-radius:6px;flex:1">
@@ -231,12 +234,11 @@ function loadTypeSchema(){
 }
 function saveTypeSchema(obj){ localStorage.setItem("typeSchema", JSON.stringify(obj)); }
 
-/* ========= RENDER SELECTS ========= */
+/* ========= SELECT RENDER ========= */
 function renderBrandOptions(sel, selected=""){
   const brands=loadBrands();
   sel.innerHTML = '';
-  // "*---*" と 追加する…
-  sel.appendChild(new Option("*---*",""));
+  sel.appendChild(new Option('---','')); // テーブルの初期表示は ---（値は空）
   brands.forEach(b=> sel.appendChild(new Option(b,b)) );
   sel.appendChild(new Option("＋ 追加する…","__add_brand__"));
   sel.value = selected || "";
@@ -257,11 +259,10 @@ function renderBrandOptions(sel, selected=""){
 function renderTypeSelect(sel, selected=""){
   const schema = loadTypeSchema();
   sel.innerHTML = '';
-  // "*---*"
-  sel.appendChild(new Option("*---*",""));
-  // 大カテゴリを直接選べるように（cat:XXX）
+  sel.appendChild(new Option('---','')); // テーブルの初期表示は ---（値は空）
+  // 大カテゴリ名も選択可能（カテゴリ名を選べば配下すべて対象）
   Object.keys(schema).forEach(cat=>{
-    sel.appendChild(new Option(`【カテゴリ】${cat}`, `cat:${cat}`));
+    sel.appendChild(new Option(cat, cat));
     const og = document.createElement("optgroup"); og.label = cat;
     schema[cat].forEach(name=> og.appendChild(new Option(name,name)) );
     sel.appendChild(og);
@@ -285,11 +286,20 @@ function renderTypeSelect(sel, selected=""){
     }
   };
 }
+function renderDrawTypeFilter(sel, selected=""){
+  const schema = loadTypeSchema();
+  sel.innerHTML = '';
+  sel.appendChild(new Option('すべて','')); // 抽選画面は「すべて」
+  Object.keys(schema).forEach(cat=>{
+    sel.appendChild(new Option(cat, cat));
+    const og = document.createElement("optgroup"); og.label = cat;
+    schema[cat].forEach(name=> og.appendChild(new Option(name,name)) );
+    sel.appendChild(og);
+  });
+  sel.value = selected || "";
+}
 function refreshAllTypeSelects(){
-  // 抽選フィルタ（選択保持）
-  const prev = $("#fType").value;
-  renderTypeSelect($("#fType"), prev);
-  // テーブル行
+  renderDrawTypeFilter($("#fType"), $("#fType").value);
   $$(".typeSel").forEach(s=> renderTypeSelect(s, s.value) );
 }
 function renderAllBrandSelects(){
@@ -305,7 +315,7 @@ function makeRow(){
     <td contenteditable="true" placeholder="商品名"></td>
     <td><select class="brandSel"></select></td>
     <td><select class="typeSel"></select></td>
-    <td><select><option>有</option><option>無</option></select></td>
+    <td><select><option>あり</option><option>なし</option></select></td>
     <td><select><option selected>あり</option><option>なし</option></select></td>
     <td class="editable"><input type="date"></td>
     <td contenteditable="true"></td>
@@ -330,14 +340,11 @@ renderHist();
 
 /* ========= DRAW ========= */
 let currentPick=null;
-function getSchema(){ return loadTypeSchema(); }
-function typesInCategory(cat){
-  const s=getSchema(); return s[cat]||[];
-}
+function typesInCategory(cat){ const s=loadTypeSchema(); return s[cat]||[]; }
 function drawTea(){
   const rows=$$("#teaBody tr");
-  const fType=$("#fType").value; // "" or "cat:XXX" or "具体名"
-  const fCaf=$("#fCaf").value;   // "有" or "無"
+  const fType=$("#fType").value; // "" or カテゴリ名 or 具体名
+  const fCaf=$("#fCaf").value;   // "あり" or "なし"
   const kw = ($("#fKeyword").value||"").toLowerCase();
 
   let cands=[];
@@ -345,28 +352,29 @@ function drawTea(){
     const name=r.cells[0].innerText.trim();
     if(!name) return; // 商品名は必須
 
-    const brand=r.cells[1].querySelector("select").value; // "*---*" でもOK
-    const type=r.cells[2].querySelector("select").value;  // "*---*" or "cat:～" or 具体名
-    const caf=r.cells[3].querySelector("select").value||"有"; // デフォルト有
-    const stock=r.cells[4].querySelector("select").value||"あり"; // デフォルトあり
+    const brand=r.cells[1].querySelector("select").value; // 空でもOK
+    const type=r.cells[2].querySelector("select").value;  // 空 or カテゴリ名 or 具体名
+    const caf=r.cells[3].querySelector("select").value||"あり";
+    const stock=r.cells[4].querySelector("select").value||"あり";
     const bestBefore=r.cells[5].querySelector("input").value; // 空白OK
-    const baseW=parseFloat(r.cells[7].innerText.trim()||"1"); // 右端に移動済み
     const note=r.cells[6].innerText.trim();
+    const baseW=parseFloat(r.cells[7].innerText.trim()||"1");
 
-    if(stock!=="あり") return;           // 在庫なしは除外
-    // フィルタ（種類）
+    if(stock!=="あり") return;
+
+    // 種類フィルタ
     if(fType){
-      if(fType.startsWith("cat:")){
-        const cat=fType.slice(4); const list=typesInCategory(cat);
-        if(!(list.includes(type)|| (type.startsWith("cat:") && type.slice(4)===cat))) return;
-      }else{
+      const catList = typesInCategory(fType);
+      if(catList.length){ // カテゴリ選択時
+        if(!(catList.includes(type) || type===fType)) return;
+      }else{ // 具体名
         if(type!==fType) return;
       }
     }
-    // フィルタ（カフェイン）
+    // カフェインフィルタ
     if(caf!==fCaf) return;
 
-    // フリーワード：商品名・種類・メモ
+    // フリーワード
     const hay=(name+" "+type+" "+note).toLowerCase();
     if(kw && !hay.includes(kw)) return;
 
@@ -394,7 +402,6 @@ function drawTea(){
     return w;
   });
 
-  // ルーレット
   const total=weights.reduce((a,b)=>a+b,0);
   let r=Math.random()*total, chosen=null;
   for(let i=0;i<cands.length;i++){ r-=weights[i]; if(r<=0){ chosen=cands[i]; break; } }
@@ -402,13 +409,12 @@ function drawTea(){
   return chosen;
 }
 
-/* 抽選ボタン */
+/* 抽選ボタン（フィルタ直下配置） */
 $("#btnDraw").addEventListener("click",()=>{
   if(isDrawing)return; isDrawing=true; setTimeout(()=>{isDrawing=false},400);
   const pick=drawTea(); if(!pick)return;
   setBtnLabel("再抽選");
-  // 残日数バッジ
-  let badge=""; if(pick.bestBefore){ const d=new Date(pick.bestBefore); const today=new Date(); today.setHours(0,0,0,0); const left=Math.floor((d-today)/(86400000)); badge = `（残り ${left} 日）`; }
+  let badge=""; if(pick.bestBefore){ const d=new Date(pick.bestBefore); const today=new Date(); today.setHours(0,0,0,0); const left=Math.floor((d-today)/86400000); badge = `（残り ${left} 日）`; }
   $("#drawResult").innerHTML=`<b>${pick.name}</b> ${pick.brand?`(${pick.brand})`:""} - ${pick.type||""} ${pick.caf||""} ${badge}`;
   $("#memoArea").style.display="block";
 });
@@ -437,7 +443,7 @@ $("#btnExportHistory").addEventListener("click",()=>{
   toast("保存しました");
 });
 
-/* 初期化（履歴＋重み設定） */
+/* 初期化 */
 $("#btnClearHist").addEventListener("click",()=>{
   if(confirm("履歴と重み設定を初期化します。よろしいですか？")){
     localStorage.removeItem("history"); localStorage.removeItem("settings");
@@ -473,10 +479,10 @@ $$(".subtab").forEach(b=>b.addEventListener("click",()=>{
 $("#mode").value=settings.mode;
 $("#mode").addEventListener("change",()=>{settings.mode=$("#mode").value;saveSettings(settings);toast("モードを変更しました");});
 
-/* フィルタ初期化 */
-renderTypeSelect($("#fType"));
+/* フィルタ初期化（抽選） */
+renderDrawTypeFilter($("#fType"));
 
-/* ====== 種類(産地) 管理（D&D） ====== */
+/* ====== 種類(産地) 管理（D&D＋挿入ライン＋×削除＋カテゴリ名編集） ====== */
 function buildTypeBoard(){
   const schema=loadTypeSchema();
   const board=$("#typeBoard"); board.innerHTML="";
@@ -488,22 +494,52 @@ function makeTypeColumn(catName, items){
   const col=document.createElement("div");
   col.className="col"; col.draggable=true; col.dataset.cat=catName;
 
-  const h=document.createElement("h4");
-  h.innerHTML=`<span>${catName}</span>`;
-  const del=document.createElement("button"); del.className="btn danger"; del.textContent="削除";
-  del.addEventListener("click",()=>{const sc=loadTypeSchema(); delete sc[catName]; saveTypeSchema(sc); buildTypeBoard(); refreshAllTypeSelects(); toast("カテゴリーを削除しました");});
-  h.appendChild(del);
-  col.appendChild(h);
+  const head=document.createElement("header");
+  const grip=document.createElement("span"); grip.className="grip"; grip.textContent="••••••";
+  const nameSpan=document.createElement("span"); nameSpan.className="cat-name"; nameSpan.textContent=catName; nameSpan.contentEditable=true;
+  nameSpan.addEventListener("blur",()=>{
+    const sc=loadTypeSchema(); const old=col.dataset.cat; const nv=nameSpan.textContent.trim()||old;
+    if(nv!==old){
+      sc[nv]=sc[old]||[]; delete sc[old]; saveTypeSchema(sc); col.dataset.cat=nv; buildTypeBoard(); refreshAllTypeSelects(); toast("カテゴリー名を更新しました");
+    }
+  });
+  const del=document.createElement("button"); del.className="btn danger"; del.textContent="×";
+  del.addEventListener("click",()=>{const sc=loadTypeSchema(); delete sc[col.dataset.cat]; saveTypeSchema(sc); buildTypeBoard(); refreshAllTypeSelects(); toast("カテゴリーを削除しました");});
+
+  head.appendChild(grip); head.appendChild(nameSpan); head.appendChild(del);
+  col.appendChild(head);
 
   const list=document.createElement("div"); list.className="list"; list.dataset.cat=catName;
-  list.addEventListener("dragover",(e)=>{e.preventDefault(); const dragging=$(".item.dragging"); if(dragging){ list.appendChild(dragging); }});
+  const dropLine=document.createElement("div"); dropLine.className="drop-line"; list.appendChild(dropLine);
+
+  list.addEventListener("dragover",(e)=>{
+    e.preventDefault();
+    const dragging=$(".item.dragging");
+    if(!dragging) return;
+    const children=[...list.querySelectorAll(".item:not(.dragging)")];
+    let nearest=null; let nearestOffset=Number.NEGATIVE_INFINITY;
+    children.forEach(c=>{
+      const box=c.getBoundingClientRect();
+      const offset=e.clientY - box.top - box.height/2;
+      if(offset<0 && offset>nearestOffset){ nearestOffset=offset; nearest=c; }
+    });
+    if(nearest==null){ list.appendChild(dragging); dropLine.style.display="block"; dropLine.style.top=(list.scrollTop+list.clientHeight-8)+"px"; }
+    else{ list.insertBefore(dragging, nearest); dropLine.style.display="block"; dropLine.style.top=(nearest.offsetTop)+"px"; }
+  });
+  list.addEventListener("dragleave",()=>{ dropLine.style.display="none"; });
+  list.addEventListener("drop",()=>{ dropLine.style.display="none"; saveTypesFromBoard(); refreshAllTypeSelects(); });
   col.appendChild(list);
 
   items.forEach(it=>{
-    const itemEl=document.createElement("div"); itemEl.className="item"; itemEl.textContent=it; itemEl.draggable=true;
+    const itemEl=document.createElement("div");
+    itemEl.className="item"; itemEl.draggable=true;
+    const ig=document.createElement("span"); ig.className="grip"; ig.textContent="••••••";
+    const label=document.createElement("span"); label.className="label"; label.textContent=it;
+    const x=document.createElement("button"); x.className="del"; x.textContent="×";
+    x.addEventListener("click",()=>{ itemEl.remove(); saveTypesFromBoard(); refreshAllTypeSelects(); toast("削除しました"); });
+    itemEl.appendChild(ig); itemEl.appendChild(label); itemEl.appendChild(x);
     itemEl.addEventListener("dragstart",()=>itemEl.classList.add("dragging"));
-    itemEl.addEventListener("dragend",()=>{itemEl.classList.remove("dragging"); saveTypesFromBoard(); refreshAllTypeSelects();});
-    itemEl.addEventListener("dblclick",()=>{ if(confirm(`「${it}」を削除しますか？`)){ itemEl.remove(); saveTypesFromBoard(); refreshAllTypeSelects(); toast("削除しました"); }});
+    itemEl.addEventListener("dragend",()=>{itemEl.classList.remove("dragging");});
     list.appendChild(itemEl);
   });
 
@@ -513,16 +549,20 @@ function makeTypeColumn(catName, items){
   const btn=document.createElement("button"); btn.className="btn"; btn.textContent="＋ 追加";
   btn.addEventListener("click",()=>{
     const v=inp.value.trim(); if(!v) return;
-    const newEl=document.createElement("div"); newEl.className="item"; newEl.textContent=v; newEl.draggable=true;
+    const newEl=document.createElement("div"); newEl.className="item"; newEl.draggable=true;
+    const ig=document.createElement("span"); ig.className="grip"; ig.textContent="••••••";
+    const label=document.createElement("span"); label.className="label"; label.textContent=v;
+    const x=document.createElement("button"); x.className="del"; x.textContent="×";
+    x.addEventListener("click",()=>{ newEl.remove(); saveTypesFromBoard(); refreshAllTypeSelects(); toast("削除しました"); });
+    newEl.appendChild(ig); newEl.appendChild(label); newEl.appendChild(x);
     newEl.addEventListener("dragstart",()=>newEl.classList.add("dragging"));
-    newEl.addEventListener("dragend",()=>{newEl.classList.remove("dragging"); saveTypesFromBoard(); refreshAllTypeSelects();});
-    newEl.addEventListener("dblclick",()=>{ if(confirm(`「${v}」を削除しますか？`)){ newEl.remove(); saveTypesFromBoard(); refreshAllTypeSelects(); }});
+    newEl.addEventListener("dragend",()=>{newEl.classList.remove("dragging");});
     list.appendChild(newEl); inp.value=""; saveTypesFromBoard(); refreshAllTypeSelects(); toast("追加しました");
   });
   addWrap.appendChild(inp); addWrap.appendChild(btn);
   col.appendChild(addWrap);
 
-  // カテゴリのドラッグ
+  // カテゴリのドラッグ（列単位）
   col.addEventListener("dragstart",(e)=>{ if(e.target===col){ col.classList.add("dragging"); }});
   col.addEventListener("dragend",()=>{ col.classList.remove("dragging"); saveTypesFromBoard(); refreshAllTypeSelects(); });
 
@@ -531,54 +571,80 @@ function makeTypeColumn(catName, items){
 $("#typeBoard").addEventListener("dragover",(e)=>{
   e.preventDefault();
   const dragging=$(".col.dragging");
-  if(dragging){
-    const board=$("#typeBoard");
-    const after = Array.from(board.children).find(el=>{
-      const rect = el.getBoundingClientRect();
-      return e.clientY <= rect.top + rect.height/2;
-    });
-    board.insertBefore(dragging, after||null);
-  }
+  if(!dragging) return;
+  const board=$("#typeBoard");
+  const after = Array.from(board.children).find(el=>{
+    const rect = el.getBoundingClientRect();
+    return e.clientY <= rect.top + rect.height/2;
+  });
+  board.insertBefore(dragging, after||null);
 });
 function saveTypesFromBoard(){
   const board=$("#typeBoard"); const obj={};
   Array.from(board.children).forEach(col=>{
     const cat=col.dataset.cat;
-    const items=Array.from(col.querySelectorAll(".item")).map(x=>x.textContent);
+    const items=Array.from(col.querySelectorAll(".item .label")).map(x=>x.textContent);
     obj[cat]=items;
   });
   saveTypeSchema(obj);
 }
 
-/* 追加：新規カテゴリ */
+/* 新規カテゴリ */
 $("#btnAddCat").addEventListener("click",()=>{
   const name=$("#newCatName").value.trim(); if(!name) return;
   const sc=loadTypeSchema(); if(!sc[name]) sc[name]=[];
   saveTypeSchema(sc); $("#newCatName").value=""; buildTypeBoard(); refreshAllTypeSelects(); toast("カテゴリーを追加しました");
 });
 
-/* ====== ブランド 管理（シンプルD&Dリスト） ====== */
+/* ====== ブランド 管理（D&D・挿入ライン・×削除） ====== */
 function buildBrandBoard(){
   const board=$("#brandBoard"); board.innerHTML="";
   const brands=loadBrands();
-  // 1列にまとめる
   const col=document.createElement("div"); col.className="col"; col.dataset.cat="brands"; col.draggable=false;
-  const h=document.createElement("h4"); h.textContent="ブランド一覧"; col.appendChild(h);
+
+  const head=document.createElement("header");
+  const grip=document.createElement("span"); grip.className="grip"; grip.textContent="••••••";
+  const title=document.createElement("span"); title.textContent="ブランド一覧";
+  head.appendChild(grip); head.appendChild(title);
+  col.appendChild(head);
+
   const list=document.createElement("div"); list.className="list"; col.appendChild(list);
+  const dropLine=document.createElement("div"); dropLine.className="drop-line"; list.appendChild(dropLine);
+
   brands.forEach(b=>{
-    const el=document.createElement("div"); el.className="item"; el.textContent=b; el.draggable=true;
+    const el=document.createElement("div"); el.className="item"; el.draggable=true;
+    const ig=document.createElement("span"); ig.className="grip"; ig.textContent="••••••";
+    const label=document.createElement("span"); label.className="label"; label.textContent=b;
+    const x=document.createElement("button"); x.className="del"; x.textContent="×";
+    x.addEventListener("click",()=>{ el.remove(); saveBrandsFromBoard(); renderAllBrandSelects(); toast("削除しました"); });
+    el.appendChild(ig); el.appendChild(label); el.appendChild(x);
     el.addEventListener("dragstart",()=>el.classList.add("dragging"));
-    el.addEventListener("dragend",()=>{el.classList.remove("dragging"); saveBrandsFromBoard(); renderAllBrandSelects();});
-    el.addEventListener("dblclick",()=>{ if(confirm(`「${b}」を削除しますか？`)){ el.remove(); saveBrandsFromBoard(); renderAllBrandSelects(); toast("削除しました"); }});
+    el.addEventListener("dragend",()=>{el.classList.remove("dragging"); dropLine.style.display="none"; saveBrandsFromBoard(); renderAllBrandSelects();});
     list.appendChild(el);
   });
-  board.appendChild(col);
 
-  list.addEventListener("dragover",(e)=>{ e.preventDefault(); const dragging=$(".item.dragging"); if(dragging){ list.appendChild(dragging); }});
+  list.addEventListener("dragover",(e)=>{
+    e.preventDefault();
+    const dragging=$(".item.dragging");
+    if(!dragging) return;
+    const children=[...list.querySelectorAll(".item:not(.dragging)")];
+    let nearest=null; let nearestOffset=Number.NEGATIVE_INFINITY;
+    children.forEach(c=>{
+      const box=c.getBoundingClientRect();
+      const offset=e.clientY - box.top - box.height/2;
+      if(offset<0 && offset>nearestOffset){ nearestOffset=offset; nearest=c; }
+    });
+    if(nearest==null){ list.appendChild(dragging); dropLine.style.display="block"; dropLine.style.top=(list.scrollTop+list.clientHeight-8)+"px"; }
+    else{ list.insertBefore(dragging, nearest); dropLine.style.display="block"; dropLine.style.top=(nearest.offsetTop)+"px"; }
+  });
+  list.addEventListener("dragleave",()=>{ dropLine.style.display="none"; });
+  list.addEventListener("drop",()=>{ dropLine.style.display="none"; saveBrandsFromBoard(); renderAllBrandSelects(); });
+
+  board.appendChild(col);
 }
 function saveBrandsFromBoard(){
   const list=$("#brandBoard .list");
-  const arr=Array.from(list.querySelectorAll(".item")).map(x=>x.textContent);
+  const arr=Array.from(list.querySelectorAll(".item .label")).map(x=>x.textContent);
   saveBrands(arr);
 }
 
@@ -590,14 +656,15 @@ $("#btnAddBrandName").addEventListener("click",()=>{
 });
 
 /* ====== INIT ====== */
-buildTypeBoard();
-buildBrandBoard();
-renderTypeSelect($("#fType"));
-function initTableSelects(){ renderAllBrandSelects(); refreshAllTypeSelects(); }
-initTableSelects();
+function renderAll(){
+  buildTypeBoard();
+  buildBrandBoard();
+  renderDrawTypeFilter($("#fType"));
+  renderAllBrandSelects();
+  refreshAllTypeSelects();
+}
+renderAll();
 
-/* ダブルクリック防止付き 抽選ボタン */
-$("#btnDraw").addEventListener("click",()=>{}); // ハンドラは上で実装済み（保持のためnoop）
 </script>
 
 <button id="fab" class="fab">🎲</button>

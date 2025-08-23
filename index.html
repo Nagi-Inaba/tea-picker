@@ -84,7 +84,7 @@
   .info{display:inline-flex;gap:6px;align-items:center}
   .info .i{display:inline-block;width:16px;height:16px;border:1px solid #aaa;border-radius:50%;text-align:center;line-height:16px;font-size:12px;cursor:help}
 
-  /* D&Dボード（種類・ブランド） */
+  /* D&Dボード（種類・販売店・茶園） */
   .board{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
   .col{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff}
   .col.dragging{opacity:.6}
@@ -129,7 +129,7 @@
   <!-- 抽選 -->
   <section id="tab-draw" class="card">
     <div class="row" style="flex-wrap:wrap;align-items:center">
-      <label>種類(産地)
+      <label>種類・産地
         <select id="fType"></select>
       </label>
       <label>カフェイン
@@ -139,7 +139,7 @@
           <option value="なし">なし</option>
         </select>
       </label>
-      <label>フリーワード <input id="fKeyword" placeholder="商品名・種類・メモで検索"></label>
+      <label>フリーワード <input id="fKeyword" placeholder="商品名・種類・産地・メモで検索"></label>
       <span id="countInfo" class="muted"></span>
     </div>
     <div style="margin:12px 0;">
@@ -169,8 +169,8 @@
         </colgroup>
         <thead><tr>
           <th>商品名<span class="muted">（必須）</span></th>
-          <th>ブランド</th>
-          <th>種類(産地)</th>
+          <th>販売店・茶園</th>
+          <th>種類・産地</th>
           <th>カフェイン</th>
           <th>在庫</th>
           <th>賞味期限</th>
@@ -190,7 +190,7 @@
   <!-- 履歴 -->
   <section id="tab-history" class="card" style="display:none">
     <button id="btnExportHistory" class="btn">履歴CSV保存</button>
-    <table id="histTable"><thead><tr><th>日時</th><th>商品名</th><th>ブランド</th><th>種類</th><th>賞味期限</th><th>メモ</th></tr></thead><tbody></tbody></table>
+    <table id="histTable"><thead><tr><th>日時</th><th>商品名</th><th>販売店・茶園</th><th>種類・産地</th><th>賞味期限</th><th>メモ</th></tr></thead><tbody></tbody></table>
   </section>
 
   <!-- 設定 -->
@@ -198,8 +198,8 @@
     <div class="subtabs">
       <button class="subtab active" data-sub="simple">簡単設定</button>
       <button class="subtab" data-sub="custom">カスタム</button>
-      <button class="subtab" data-sub="types">種類(産地)の管理</button>
-      <button class="subtab" data-sub="brands">ブランドの管理</button>
+      <button class="subtab" data-sub="types">種類・産地の管理</button>
+      <button class="subtab" data-sub="brands">販売店・茶園の管理</button>
     </div>
 
     <!-- 簡単設定 -->
@@ -224,16 +224,16 @@
         <label>biasFactor <input id="setBias" type="number" step="0.1" value="0.5"></label>
       </div>
       <div style="margin-top:8px">
-        <p><b>当選倍率</b>：<code>当選倍率 = 基本倍率 × (1 + K × 緊急度) × バイアス</code></p>
-        <p><b>緊急度</b>：<code>緊急度 = clamp(1 − 残日数 / D, 0, 1)</code>（＝「D日」を100%と見たときの進み具合）。Dを<b>大きく</b>すると賞味期限接近による当選倍率の上乗せ開始時期が早まります。</p>
         <p>Kを<b>大きく</b>すると最大当選倍率が高くなります。</p>
+        <p><b>当選倍率</b>：<code>当選倍率 = 基本倍率 × (1 + K × 緊急度) × バイアス</code></p>
+        <p><b>緊急度</b>：<code>緊急度 = clamp(1 − 残日数 / D, 0, 1)、※clamp(x, 0, 1) = x を 0〜1 の範囲に収める関数（0未満なら0、1を超えたら1になる）</code>（＝「D日」を100%と見たときの進み具合）。Dを<b>大きく</b>すると賞味期限接近による当選倍率の上乗せ開始時期が早まります。</p>
         <p><b>バイアス</b>：<code>biasFactor</code> は「<code>recentN</code>=直近N回以内に当選した銘柄」の重みをどれだけ下げるか。</p>
         <p>例：<code>recentN</code>を5、<code>biasFactor</code>を0.5にした場合は、直近5回に当選した茶葉の当選確率を0.5倍(半分)に下げる。</p>
       </div>
       <p class="muted">※変更は即保存され、次回抽選から反映されます</p>
     </div>
 
-    <!-- 種類(産地) 管理 -->
+    <!-- 種類・産地 管理 -->
     <div id="sub-types" style="display:none">
       <div id="typeBoard" class="board"></div>
       <div class="row">
@@ -242,11 +242,11 @@
       </div>
     </div>
 
-    <!-- ブランド 管理 -->
+    <!-- 販売店・茶園 管理 -->
     <div id="sub-brands" style="display:none">
       <div id="brandBoard" class="board"></div>
       <div class="row">
-        <input id="newBrandName" placeholder="ブランド名を追加" style="padding:6px;border:1px solid #ccc;border-radius:6px;flex:1">
+        <input id="newBrandName" placeholder="販売店・茶園名を追加" style="padding:6px;border:1px solid #ccc;border-radius:6px;flex:1">
         <button id="btnAddBrandName" class="btn">＋ 追加</button>
       </div>
     </div>
@@ -280,8 +280,11 @@ function saveBrands(b){localStorage.setItem("brands",JSON.stringify(b));}
 const DEFAULT_TYPES = {
   "インド": ["アッサム","ダージリン","ニルギリ","ドアーズ"],
   "スリランカ": ["ディンブラ","ヌワラエリヤ","キャンディ","ウバ","ウダプセラワ","ルフナ"],
-  "中国": ["キーマン","ラプサンスーチョン"],
-  "フレーバー/ブレンド": ["ブレンド","アールグレイ","フレーバード","ルイボス"]
+  "中国": ["祁門(キーマン)","正山小種(ラプサンスーチョン)","雲南(滇紅)","金駿眉"],
+  "台湾": ["梨山","凍頂"],
+  "その他(茶)": ["ブレンド","アールグレイ","フレーバード"],
+  "その他(地域)":["ネパール","バングラディシュ","ケニア","マラウイ"],
+  "ハーブティー": ["カモミール","ローズヒップティー"]
 };
   
 // 無効な値を除去し、完全に空ならデフォルトを埋める
@@ -354,7 +357,7 @@ function renderBrandOptions(sel, selected=""){
   sel.onchange = () => {
     if (sel.value !== "__add_brand__") return;
 
-    const v = prompt("追加するブランド名を入力してください");
+    const v = prompt("追加する販売店・茶園名を入力してください");
     if (v && v.trim()) {
       const list = loadBrands();
       if (!list.includes(v)) {
@@ -363,7 +366,7 @@ function renderBrandOptions(sel, selected=""){
       }
       renderAllBrandSelects();
       sel.value = v;
-      toast("ブランドを追加しました");
+      toast("販売店・茶園を追加しました");
     } else {
       sel.value = "";
     }
@@ -396,7 +399,7 @@ function renderTypeSelect(sel, selected=""){
       const cats = Object.keys(schema2);
       const chosenCat = prompt("追加先の大カテゴリー名を入力（既存名でも新規でもOK）\n既存: "+cats.join(" / "));
       if(!chosenCat){ sel.value=""; return; }
-      const item = prompt("追加する種類(産地)名を入力");
+      const item = prompt("追加する種類・産地を入力");
       if(!item){ sel.value=""; return; }
       if(!schema2[chosenCat]) schema2[chosenCat] = [];
       if(!schema2[chosenCat].includes(item)) schema2[chosenCat].push(item);
@@ -404,7 +407,7 @@ function renderTypeSelect(sel, selected=""){
       buildTypeBoard();
       refreshAllTypeSelects();
       sel.value = item;
-      toast("種類(産地)を追加しました");
+      toast("種類・産地を追加しました");
     }
   };
 }
@@ -557,7 +560,7 @@ $("#btnSave").addEventListener("click",()=>{
 $("#btnExportHistory").addEventListener("click",()=>{
   if(!confirm("履歴CSVを保存しますか？"))return;
   const hist=loadHist(); if(!hist.length){toast("履歴なし");return;}
-  let csv="日時,商品名,ブランド,種類,賞味期限,メモ\n";
+  let csv="日時,商品名,販売店・茶園,種類・産地,賞味期限,メモ\n";
   hist.forEach(h=>{csv+=`${h.timestamp},${h.name},${h.brand||""},${h.type||""},${h.bestBefore||""},${h.note||""}\n`;});
   const blob=new Blob(["\uFEFF"+csv],{type:"text/csv"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="tea-history.csv";a.click();
@@ -607,7 +610,7 @@ $("#mode").addEventListener("change",()=>{settings.mode=$("#mode").value;saveSet
 /* フィルタ初期化（抽選） */
 renderDrawTypeFilter($("#fType"));
 
-/* ====== 種類(産地) 管理（D&D＋青線可視化＋×削除＋カテゴリ名編集） ====== */
+/* ====== 種類・産地 管理（D&D＋青線可視化＋×削除＋カテゴリ名編集） ====== */
 function buildTypeBoard(){
   const schema=loadTypeSchema();
   const board=$("#typeBoard"); board.innerHTML="";
@@ -803,14 +806,14 @@ $("#btnAddCat").addEventListener("click",()=>{
   saveTypeSchema(sc); $("#newCatName").value=""; buildTypeBoard(); refreshAllTypeSelects(); toast("カテゴリーを追加しました");
 });
 
-/* ====== ブランド 管理（項目にのみ6点グリップ） ====== */
+/* ====== 販売店・茶園 管理（項目にのみ6点グリップ） ====== */
 function buildBrandBoard(){
   const board=$("#brandBoard"); board.innerHTML="";
   const brands=loadBrands();
   const col=document.createElement("div"); col.className="col"; col.dataset.cat="brands";
 
   const head=document.createElement("header");
-  const title=document.createElement("span"); title.textContent="ブランド一覧";
+  const title=document.createElement("span"); title.textContent="販売店・茶園一覧";
   head.appendChild(title); col.appendChild(head);
 
   const list = document.createElement("div");

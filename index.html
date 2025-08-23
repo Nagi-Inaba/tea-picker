@@ -1,62 +1,72 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TeaChoice - 今日の一杯をランダムに</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#ffffff">
-  <style>
-    :root{--pad:12px;--radius:10px;--shadow:0 2px 12px rgba(0,0,0,.08);}
-    body{margin:0;background:#f7f8fa;color:#111;font-family:system-ui,Roboto,"Noto Sans JP",sans-serif;}
-    header{position:sticky;top:0;background:#fff;padding:10px var(--pad);box-shadow:var(--shadow);z-index:2;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    header h1{font-size:18px;margin:0;flex:1}
-    button,select,input,textarea{font-size:16px}
-    .btn{padding:8px 14px;border-radius:8px;border:1px solid #d0d6e0;background:#fff;cursor:pointer}
-    .btn.primary{background:#111;color:#fff;border-color:#111}
-    .btn.danger{color:#b00020;border-color:#b00020}
-    .wrap{padding:var(--pad);max-width:1000px;margin:0 auto}
-    .card{background:#fff;border:1px solid #e4e7ee;border-radius:var(--radius);padding:var(--pad);box-shadow:var(--shadow);margin-bottom:12px}
-    .tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
-    .tab{padding:8px 12px;border-radius:999px;border:1px solid #d0d6e0;background:#fff;cursor:pointer}
-    .tab.active{background:#111;color:#fff;border-color:#111}
-    .subtabs{display:flex;gap:6px;margin:8px 0}
-    .subtab{padding:6px 10px;border-radius:999px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:13px}
-    .subtab.active{background:#2b2f36;color:#fff;border-color:#2b2f36}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid #eef1f6;padding:6px;text-align:left;font-size:14px}
-    th{background:#fafbfc;position:sticky;top:0;z-index:1}
-    /* 編集可能セル */
-    td[contenteditable="true"],
-    td.editable input[type="date"],
-    td.editable textarea {
-      background:#f8f9fa;
-      padding:6px;
-      border-radius:4px;
-      min-width:100px;
-      cursor:text;
-    }
-    td[contenteditable="true"]:focus,
-    td.editable input[type="date"]:focus,
-    td.editable textarea:focus {
-      background:#fff;
-      border:1px solid #666;
-      outline:none;
-    }
-    /* プルダウン */
-    td select {
-      background:#fff;
-      padding:4px;
-      border:1px solid #ccc;
-      border-radius:4px;
-      cursor:pointer;
-    }
-    td select:focus{border-color:#666;outline:none}
-    .toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;opacity:0;transition:opacity .3s;z-index:999}
-    .toast.show{opacity:1}
-    .fab{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;border:none;border-radius:50%;width:56px;height:56px;font-size:24px;box-shadow:var(--shadow);cursor:pointer;display:none}
-    @media(max-width:768px){.fab{display:block}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TeaChoice - 今日の一杯をランダムに</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffffff">
+<style>
+  :root{--pad:12px;--radius:10px;--shadow:0 2px 12px rgba(0,0,0,.08);}
+  body{margin:0;background:#f7f8fa;color:#111;font-family:system-ui,Roboto,"Noto Sans JP",sans-serif;}
+  header{position:sticky;top:0;background:#fff;padding:10px var(--pad);box-shadow:var(--shadow);z-index:2;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;flex:1}
+  button,select,input,textarea{font-size:16px}
+  .btn{padding:8px 14px;border-radius:8px;border:1px solid #d0d6e0;background:#fff;cursor:pointer}
+  .btn.primary{background:#111;color:#fff;border-color:#111}
+  .btn.danger{color:#b00020;border-color:#b00020}
+  .wrap{padding:var(--pad);max-width:1100px;margin:0 auto}
+  .card{background:#fff;border:1px solid #e4e7ee;border-radius:var(--radius);padding:var(--pad);box-shadow:var(--shadow);margin-bottom:12px}
+  .tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+  .tab{padding:8px 12px;border-radius:999px;border:1px solid #d0d6e0;background:#fff;cursor:pointer}
+  .tab.active{background:#111;color:#fff;border-color:#111}
+  .subtabs{display:flex;gap:6px;margin:8px 0}
+  .subtab{padding:6px 10px;border-radius:999px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:13px}
+  .subtab.active{background:#2b2f36;color:#fff;border-color:#2b2f36}
+  table{width:100%;border-collapse:collapse}
+  th,td{border-bottom:1px solid #eef1f6;padding:6px;text-align:left;font-size:14px;vertical-align:top}
+  th{background:#fafbfc;position:sticky;top:0;z-index:1}
+  /* 入力可能セル（薄グレー → フォーカス白） */
+  td[contenteditable="true"],
+  td.editable input[type="date"],
+  td.editable textarea {
+    background:#f8f9fa;
+    padding:6px;
+    border-radius:4px;
+    min-width:100px;
+    cursor:text;
+  }
+  td[contenteditable="true"]:focus,
+  td.editable input[type="date"]:focus,
+  td.editable textarea:focus {
+    background:#fff;
+    border:1px solid #666;
+    outline:none;
+  }
+  /* プルダウン */
+  select {
+    background:#fff;
+    padding:4px;
+    border:1px solid #ccc;
+    border-radius:4px;
+    cursor:pointer;
+  }
+  select:focus{border-color:#666;outline:none}
+  .toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;opacity:0;transition:opacity .3s;z-index:999}
+  .toast.show{opacity:1}
+  .fab{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;border:none;border-radius:50%;width:56px;height:56px;font-size:24px;box-shadow:var(--shadow);cursor:pointer;display:none}
+  @media(max-width:768px){.fab{display:block}}
+  /* 設定：タイプ管理ボード */
+  .type-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+  .type-col{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff}
+  .type-col.dragging{opacity:.6}
+  .type-col h4{margin:0 0 8px 0;display:flex;justify-content:space-between;align-items:center}
+  .type-list{min-height:40px;border:1px dashed #e5e7eb;border-radius:8px;padding:6px;background:#fafafa}
+  .type-item{background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:6px;margin:6px 0;cursor:grab}
+  .type-item.dragging{opacity:.6}
+  .type-actions{display:flex;gap:6px;margin-top:6px}
+  .muted{opacity:.75}
+</style>
 </head>
 <body>
 <header>
@@ -74,16 +84,9 @@
 
   <!-- 抽選 -->
   <section id="tab-draw" class="card">
-    <div class="controls">
+    <div class="controls" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label>種類(産地)
-        <select id="fType">
-          <option value="">指定なし</option>
-          <option>アッサム</option><option>ダージリン</option><option>ニルギリ</option><option>ドアーズ</option>
-          <option>ディンブラ</option><option>ヌワラエリヤ</option><option>キャンディ</option><option>ウバ</option><option>ウダプセラワ</option><option>ルフナ</option>
-          <option>キーマン</option><option>ラプサンスーチョン</option>
-          <option>ブレンド</option><option>アールグレイ</option><option>フレーバード</option><option>ルイボス</option>
-          <option>その他</option>
-        </select>
+        <select id="fType"></select>
       </label>
       <label>カフェイン
         <select id="fCaf">
@@ -113,6 +116,12 @@
         <tbody id="teaBody"></tbody>
       </table>
     </div>
+    <!-- ブランド追加（茶葉リスト直下） -->
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="newBrand" placeholder="ブランド名を追加" style="padding:6px;border:1px solid #ccc;border-radius:6px">
+      <button id="btnAddBrand" class="btn">＋ブランド追加</button>
+      <span class="muted">追加すると全てのプルダウンに即反映されます</span>
+    </div>
   </section>
 
   <!-- 履歴 -->
@@ -126,7 +135,10 @@
     <div class="subtabs">
       <button class="subtab active" data-sub="simple">簡単設定</button>
       <button class="subtab" data-sub="advanced">上級設定</button>
+      <button class="subtab" data-sub="types">種類(産地)の管理</button>
     </div>
+
+    <!-- 簡単設定 -->
     <div id="sub-simple">
       <label>抽選モード
         <select id="mode">
@@ -138,12 +150,27 @@
       <hr>
       <button id="btnClearHist" class="btn danger">履歴と重み設定を初期化</button>
     </div>
+
+    <!-- 上級設定 -->
     <div id="sub-advanced" style="display:none">
       <label>D（日） <input id="setD" type="number" min="1" value="60"></label>
       <label>K（強調係数） <input id="setK" type="number" step="0.1" value="2"></label>
       <label>recentN <input id="setRecentN" type="number" min="0" value="5"></label>
       <label>biasFactor <input id="setBias" type="number" step="0.1" value="0.5"></label>
       <p>※変更は即保存されます</p>
+    </div>
+
+    <!-- 種類(産地) 管理（ドラッグ＆ドロップで並び替え & 追加/削除） -->
+    <div id="sub-types" style="display:none">
+      <p class="muted">固定カテゴリ（編集不可）は上に、<b>カスタムカテゴリ（編集可）</b>は下に表示されます。項目はドラッグ＆ドロップで並び替え・別カテゴリへ移動できます。</p>
+      <h3>固定カテゴリ（参考）</h3>
+      <div id="fixedBoard" class="type-board"></div>
+      <hr>
+      <div style="display:flex;gap:8px;align-items:center;margin:6px 0">
+        <input id="newCatName" placeholder="新しい大カテゴリー名を追加（例：台湾・アフリカなど）" style="padding:6px;border:1px solid #ccc;border-radius:6px;flex:1">
+        <button id="btnAddCat" class="btn">＋ カテゴリー追加</button>
+      </div>
+      <div id="customBoard" class="type-board" aria-label="カスタムカテゴリのボード"></div>
     </div>
   </section>
 </div>
@@ -152,99 +179,208 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
+/* ========== ユーティリティ ========== */
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2000);}
 let isDrawing=false; function setBtnLabel(label){$("#btnDraw").textContent=label;$("#fab").textContent=(label==="抽選する"?"🎲":"🔄");}
 
+/* ========== 設定（抽選系） ========== */
 function loadSettings(){return JSON.parse(localStorage.getItem("settings")||'{"D":60,"K":2,"recentN":5,"biasFactor":0.5,"mode":"recommended"}');}
 function saveSettings(s){localStorage.setItem("settings",JSON.stringify(s));}
 let settings=loadSettings();
 
-// 茶葉リスト初期化（5行）
+/* ========== ブランド管理 ========== */
+function loadBrands(){return JSON.parse(localStorage.getItem("brands")||"[]");}
+function saveBrands(b){localStorage.setItem("brands",JSON.stringify(b));}
+function renderBrandOptions(sel){
+  const brands=loadBrands(); sel.innerHTML='<option value="">指定なし</option>';
+  brands.forEach(b=>{const o=document.createElement("option");o.textContent=b;o.value=b;sel.appendChild(o);});
+}
+
+/* ========== 種類(産地) スキーマ ========== */
+/* 固定カテゴリ（編集不可） */
+const BASE_TYPES = {
+  "インド": ["アッサム","ダージリン","ニルギリ","ドアーズ"],
+  "スリランカ": ["ディンブラ","ヌワラエリヤ","キャンディ","ウバ","ウダプセラワ","ルフナ"],
+  "中国": ["キーマン","ラプサンスーチョン"],
+  "フレーバー/ブレンド": ["ブレンド","アールグレイ","フレーバード","ルイボス"]
+};
+/* ユーザー管理のカスタムカテゴリ */
+function loadCustomTypes(){return JSON.parse(localStorage.getItem("customTypes")||"{}");}
+function saveCustomTypes(obj){localStorage.setItem("customTypes",JSON.stringify(obj));}
+/* マージ（固定 + カスタム） */
+function getMergedTypes(){
+  const merged = JSON.parse(JSON.stringify(BASE_TYPES));
+  const custom = loadCustomTypes();
+  Object.keys(custom).forEach(cat=>{
+    if(!merged[cat]) merged[cat]=[];
+    custom[cat].forEach(v=>{ if(!merged[cat].includes(v)) merged[cat].push(v); });
+  });
+  return merged;
+}
+
+/* 1つの <select> に optgroup で描画 + 末尾に「＋追加する...」 */
+function renderTypeSelect(sel, selected=""){
+  const schema = getMergedTypes();
+  sel.innerHTML="";
+  const opt0 = document.createElement("option");
+  opt0.value=""; opt0.textContent="指定なし"; sel.appendChild(opt0);
+
+  Object.keys(schema).forEach(cat=>{
+    const og = document.createElement("optgroup"); og.label = cat;
+    schema[cat].forEach(name=>{
+      const op = document.createElement("option"); op.textContent=name; op.value=name;
+      if(name===selected) op.selected=true;
+      og.appendChild(op);
+    });
+    sel.appendChild(og);
+  });
+
+  const add = document.createElement("option");
+  add.value="__add__"; add.textContent="＋ 追加する...";
+  sel.appendChild(add);
+
+  sel.onchange = ()=> {
+    if(sel.value==="__add__"){
+      // カテゴリー選択 or 新規作成
+      const merged=getMergedTypes();
+      const cats = Object.keys(merged);
+      const chosenCat = prompt("追加先の大カテゴリー名を入力してください（例：台湾, アフリカ）。既存カテゴリ名でもOKです。\n\n既存カテゴリ："+cats.join(" / "));
+      if(!chosenCat){ sel.value=""; return; }
+      const item = prompt("追加する種類(産地)名を入力してください（例：台湾高山茶）");
+      if(!item){ sel.value=""; return; }
+
+      // カスタムへ反映（既存カテゴリでもカスタム側に入れる）
+      const custom = loadCustomTypes();
+      if(!custom[chosenCat]) custom[chosenCat]=[];
+      if(!custom[chosenCat].includes(item)) custom[chosenCat].push(item);
+      saveCustomTypes(custom);
+
+      // 全箇所再描画
+      refreshAllTypeSelects();
+      toast("種類(産地)を追加しました");
+      // 追加直後に選択状態へ
+      sel.value=item;
+    }
+  };
+}
+
+/* 全タイプセレクト再描画（茶葉テーブル/抽選フィルタ） */
+function refreshAllTypeSelects(){
+  // 抽選フィルタ
+  renderTypeSelect($("#fType"), $("#fType").value);
+  // テーブル行
+  $$(".typeSel").forEach(s=>{
+    const prev = s.value;
+    renderTypeSelect(s, prev);
+  });
+}
+
+/* ========== テーブル初期化（5行） ========== */
 const teaBody=$("#teaBody");
 for(let i=0;i<5;i++){teaBody.appendChild(makeRow());}
 function makeRow(){
   const tr=document.createElement("tr");
   tr.innerHTML=`
-    <td contenteditable="true"></td>
-    <td contenteditable="true"></td>
-    <td contenteditable="true"></td>
+    <td contenteditable="true" placeholder="商品名"></td>
+    <td>
+      <select class="brandSel"></select>
+    </td>
+    <td>
+      <select class="typeSel"></select>
+    </td>
     <td><select><option value="">指定なし</option><option>有</option><option>無</option></select></td>
     <td><select><option value="">指定なし</option><option>あり</option><option>なし</option></select></td>
     <td class="editable"><input type="date"></td>
     <td contenteditable="true">1</td>
     <td><input type="checkbox" checked></td>
     <td contenteditable="true"></td>`;
+  // ブランド&タイプ初期化
+  renderBrandOptions(tr.querySelector(".brandSel"));
+  renderTypeSelect(tr.querySelector(".typeSel"));
   return tr;
 }
 
-// 履歴
+/* ========== 抽選・履歴 ========== */
 function loadHist(){return JSON.parse(localStorage.getItem("history")||"[]");}
 function saveHist(h){localStorage.setItem("history",JSON.stringify(h));}
 function renderHist(){
   const h=loadHist(); const tb=$("#histTable tbody"); tb.innerHTML="";
   h.slice().reverse().forEach(x=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${x.timestamp}</td><td>${x.name}</td><td>${x.brand}</td><td>${x.type}</td><td>${x.bestBefore||""}</td><td>${x.note||""}</td>`;
+    tr.innerHTML=`<td>${x.timestamp}</td><td>${x.name}</td><td>${x.brand||""}</td><td>${x.type||""}</td><td>${x.bestBefore||""}</td><td>${x.note||""}</td>`;
     tb.appendChild(tr);
   });
 }
 renderHist();
 
-// 抽選ロジック
 let currentPick=null;
 function drawTea(){
   const rows=$$("#teaBody tr");
+  // フィルタ
+  const fTypeVal=$("#fType").value;
+  const fCaf=$("#fCaf").value;
+  const kw=($("#fKeyword").value||"").toLowerCase();
+
   let cands=[];
   rows.forEach(r=>{
-    const name=r.cells[0].innerText.trim();
-    if(!name)return;
-    const brand=r.cells[1].innerText.trim();
-    const type=r.cells[2].innerText.trim();
+    const name=r.cells[0].innerText.trim(); if(!name) return;
+    const brand=r.cells[1].querySelector("select").value;
+    const type=r.cells[2].querySelector("select").value;
     const caf=r.cells[3].querySelector("select").value;
     const stock=r.cells[4].querySelector("select").value;
     const bestBefore=r.cells[5].querySelector("input").value;
     const baseW=parseFloat(r.cells[6].innerText.trim()||"1");
     const enabled=r.cells[7].querySelector("input").checked;
     const note=r.cells[8].innerText.trim();
-    if(enabled && stock==="あり"){
-      cands.push({name,brand,type,caf,stock,bestBefore,baseW,note});
-    }
+    if(!enabled) return;
+    if(stock!=="あり") return;
+    if(fTypeVal && type!==fTypeVal) return;
+    if(fCaf && caf!==fCaf) return;
+    const hay = (name+" "+type+" "+note).toLowerCase();
+    if(kw && !hay.includes(kw)) return;
+    cands.push({name,brand,type,caf,stock,bestBefore,baseW,note});
   });
-  if(!cands.length){$("#drawResult").textContent="候補がありません";return null;}
+  if(!cands.length){$("#drawResult").textContent="候補がありません";$("#memoArea").style.display="none";return null;}
+
   const now=new Date();
-  const mode=settings.mode;
-  const hist=loadHist(); let weights=[];
+  const hist=loadHist();
+  let weights=[];
   cands.forEach(c=>{
     let w=1;
-    if(mode==="random"){w=1;}
+    if(settings.mode==="random"){w=1;}
     else{
+      const D=settings.D||60, K=settings.K||2;
       let daysLeft=c.bestBefore?Math.floor((new Date(c.bestBefore)-now)/(1000*60*60*24)):9999;
-      let urgency=0; if(daysLeft<settings.D){urgency=1-daysLeft/settings.D;if(urgency<0)urgency=0;if(urgency>1)urgency=1;}
-      w=c.baseW*(1+settings.K*urgency);
+      let urgency=0; if(daysLeft<D){urgency=1-daysLeft/D; if(urgency<0)urgency=0; if(urgency>1)urgency=1;}
+      w=c.baseW*(1+K*urgency);
       // recentN補正
-      const recent=hist.slice(-settings.recentN);
-      if(recent.find(x=>x.name===c.name)){w*=settings.biasFactor;}
+      const recent=hist.slice(- (settings.recentN||0));
+      if(recent.find(x=>x.name===c.name)){
+        w *= (settings.biasFactor ?? 0.5);
+      }
     }
     weights.push(w);
   });
+  // ルーレット選択
   const total=weights.reduce((a,b)=>a+b,0);
-  let r=Math.random()*total,chosen=null;
-  for(let i=0;i<cands.length;i++){r-=weights[i];if(r<=0){chosen=cands[i];break;}}
+  let r=Math.random()*total, chosen=null;
+  for(let i=0;i<cands.length;i++){r-=weights[i]; if(r<=0){chosen=cands[i]; break;}}
   currentPick=chosen;
   return chosen;
 }
 
-// 抽選ボタン
+/* 抽選ボタン */
 $("#btnDraw").addEventListener("click",()=>{
   if(isDrawing)return; isDrawing=true; setTimeout(()=>{isDrawing=false},400);
   const pick=drawTea(); if(!pick)return;
   setBtnLabel("再抽選");
-  $("#drawResult").innerHTML=`<b>${pick.name}</b> (${pick.brand||""}) - ${pick.type||""} ${pick.caf||""}`;
+  $("#drawResult").innerHTML=`<b>${pick.name}</b> ${pick.brand?`(${pick.brand})`:""} - ${pick.type||""} ${pick.caf||""}`;
   $("#memoArea").style.display="block";
 });
+$("#fab").addEventListener("click",()=>$("#btnDraw").click());
 
-// 確定
+/* 確定 */
 $("#btnSave").addEventListener("click",()=>{
   if(!currentPick)return;
   const hist=loadHist();
@@ -256,39 +392,167 @@ $("#btnSave").addEventListener("click",()=>{
   currentPick=null;
 });
 
-// CSV保存
+/* 履歴CSV */
 $("#btnExportHistory").addEventListener("click",()=>{
   if(!confirm("履歴CSVを保存しますか？"))return;
   const hist=loadHist(); if(!hist.length){toast("履歴なし");return;}
   let csv="日時,商品名,ブランド,種類,賞味期限,メモ\n";
-  hist.forEach(h=>{csv+=`${h.timestamp},${h.name},${h.brand},${h.type},${h.bestBefore||""},${h.note||""}\n`;});
+  hist.forEach(h=>{csv+=`${h.timestamp},${h.name},${h.brand||""},${h.type||""},${h.bestBefore||""},${h.note||""}\n`;});
   const blob=new Blob(["\uFEFF"+csv],{type:"text/csv"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="tea-history.csv";a.click();
   toast("保存しました");
 });
 
-// 初期化
-$("#btnClearHist").addEventListener("click",()=>{if(confirm("履歴と重み設定を初期化します。よろしいですか？")){localStorage.removeItem("history");localStorage.removeItem("settings");settings=loadSettings();renderHist();toast("初期化しました");}});
+/* 初期化 */
+$("#btnClearHist").addEventListener("click",()=>{
+  if(confirm("履歴と重み設定を初期化します。よろしいですか？")){
+    localStorage.removeItem("history"); localStorage.removeItem("settings");
+    settings=loadSettings(); renderHist(); toast("初期化しました");
+  }
+});
 
-// タブ切替
+/* タブ切替 */
 $$(".tab").forEach(b=>b.addEventListener("click",()=>{ $$(".tab").forEach(t=>t.classList.remove("active")); b.classList.add("active"); ["draw","table","history","settings"].forEach(id=>$("#tab-"+id).style.display=(b.dataset.tab===id)?"block":"none"); }));
-// サブタブ
-$$(".subtab").forEach(b=>b.addEventListener("click",()=>{ $$(".subtab").forEach(t=>t.classList.remove("active")); b.classList.add("active"); $("#sub-simple").style.display=(b.dataset.sub==="simple")?"block":"none"; $("#sub-advanced").style.display=(b.dataset.sub==="advanced")?"block":"none"; }));
+/* サブタブ */
+$$(".subtab").forEach(b=>b.addEventListener("click",()=>{ $$(".subtab").forEach(t=>t.classList.remove("active")); b.classList.add("active"); $("#sub-simple").style.display=(b.dataset.sub==="simple")?"block":"none"; $("#sub-advanced").style.display=(b.dataset.sub==="advanced")?"block":"none"; $("#sub-types").style.display=(b.dataset.sub==="types")?"block":"none"; }));
 
-// 上級設定 即保存
+/* 上級設定 即保存 */
 ["setD","setK","setRecentN","setBias"].forEach(id=>{
-  $("#"+id).value=settings[id.replace("set","").toLowerCase()]||$("#"+id).value;
+  $("#"+id).value=settings[id.replace("set","").toLowerCase()]??$("#"+id).value;
   $("#"+id).addEventListener("input",()=>{
     settings.D=parseInt($("#setD").value)||60;
     settings.K=parseFloat($("#setK").value)||2;
     settings.recentN=parseInt($("#setRecentN").value)||5;
     settings.biasFactor=parseFloat($("#setBias").value)||0.5;
-    saveSettings(settings);toast("設定を保存しました");
+    saveSettings(settings); toast("設定を保存しました");
   });
 });
 $("#mode").value=settings.mode;
 $("#mode").addEventListener("change",()=>{settings.mode=$("#mode").value;saveSettings(settings);toast("モードを変更しました");});
-$("#fab").addEventListener("click",()=>$("#btnDraw").click());
+
+/* 抽選フィルタのタイプセレクト初期化 */
+renderTypeSelect($("#fType"));
+
+/* ========== ブランド追加（茶葉リスト直下） ========== */
+$("#btnAddBrand").addEventListener("click",()=>{
+  const val=$("#newBrand").value.trim(); if(!val) return;
+  const brands=loadBrands(); if(!brands.includes(val)) brands.push(val);
+  saveBrands(brands);
+  $$(".brandSel").forEach(sel=>renderBrandOptions(sel));
+  $("#newBrand").value=""; toast("ブランドを追加しました");
+});
+
+/* ========== 設定：種類(産地) 管理（ドラッグ＆ドロップ） ========== */
+function buildBoard(){
+  // 固定
+  const fixed=$("#fixedBoard"); fixed.innerHTML="";
+  Object.entries(BASE_TYPES).forEach(([cat,arr])=>{
+    fixed.appendChild(makeTypeColumn(cat,arr,false));
+  });
+  // カスタム
+  const custom=$("#customBoard"); custom.innerHTML="";
+  const cust=loadCustomTypes();
+  Object.entries(cust).forEach(([cat,arr])=>{
+    custom.appendChild(makeTypeColumn(cat,arr,true));
+  });
+}
+function makeTypeColumn(catName, items, editable){
+  const col=document.createElement("div");
+  col.className="type-col";
+  col.draggable = editable; // カテゴリ自体の並び替え
+  col.dataset.cat = catName;
+
+  const h=document.createElement("h4");
+  h.innerHTML=`<span>${catName}</span>`;
+  if(editable){
+    const del=document.createElement("button"); del.className="btn danger"; del.textContent="削除";
+    del.addEventListener("click",()=>{
+      const cust=loadCustomTypes(); delete cust[catName]; saveCustomTypes(cust); buildBoard(); refreshAllTypeSelects(); toast("カテゴリーを削除しました");
+    });
+    const actions=document.createElement("div"); actions.className="type-actions"; actions.appendChild(del);
+    h.appendChild(actions);
+  }
+  col.appendChild(h);
+
+  const list=document.createElement("div"); list.className="type-list"; list.dataset.cat=catName;
+  list.addEventListener("dragover",(e)=>{e.preventDefault(); const dragging=$(".type-item.dragging"); if(dragging && editable){ list.appendChild(dragging); }});
+  col.appendChild(list);
+
+  items.forEach(it=>{
+    const itemEl=document.createElement("div");
+    itemEl.className="type-item"; itemEl.textContent=it;
+    itemEl.draggable = editable;
+    if(editable){
+      itemEl.addEventListener("dragstart",()=>itemEl.classList.add("dragging"));
+      itemEl.addEventListener("dragend",()=>{itemEl.classList.remove("dragging"); saveCustomFromBoard(); refreshAllTypeSelects();});
+      // 個別削除（クリックで）
+      itemEl.addEventListener("dblclick",()=>{
+        if(!confirm(`「${it}」を削除しますか？`)) return;
+        itemEl.remove(); saveCustomFromBoard(); refreshAllTypeSelects(); toast("削除しました");
+      });
+    }
+    list.appendChild(itemEl);
+  });
+
+  if(editable){
+    col.addEventListener("dragstart",(e)=>{ if(e.target===col){ col.classList.add("dragging"); }});
+    col.addEventListener("dragend",()=>{ col.classList.remove("dragging"); saveCustomFromBoard(); refreshAllTypeSelects(); });
+
+    // 追加フォーム
+    const addWrap=document.createElement("div"); addWrap.style="display:flex;gap:6px;margin-top:6px";
+    const inp=document.createElement("input"); inp.placeholder="項目を追加"; inp.style="flex:1;padding:6px;border:1px solid #ccc;border-radius:6px";
+    const btn=document.createElement("button"); btn.className="btn"; btn.textContent="＋ 追加";
+    btn.addEventListener("click",()=>{
+      const v=inp.value.trim(); if(!v) return;
+      const newEl=document.createElement("div"); newEl.className="type-item"; newEl.textContent=v; newEl.draggable=true;
+      newEl.addEventListener("dragstart",()=>newEl.classList.add("dragging"));
+      newEl.addEventListener("dragend",()=>{newEl.classList.remove("dragging"); saveCustomFromBoard(); refreshAllTypeSelects();});
+      newEl.addEventListener("dblclick",()=>{ if(confirm(`「${v}」を削除しますか？`)){ newEl.remove(); saveCustomFromBoard(); refreshAllTypeSelects(); }});
+      list.appendChild(newEl); inp.value=""; saveCustomFromBoard(); refreshAllTypeSelects(); toast("追加しました");
+    });
+    addWrap.appendChild(inp); addWrap.appendChild(btn);
+    col.appendChild(addWrap);
+  }
+  return col;
+}
+/* カテゴリの並び替え（カスタムのみ） */
+$("#customBoard").addEventListener("dragover",(e)=>{
+  e.preventDefault();
+  const dragging=$(".type-col.dragging");
+  if(dragging && dragging.parentElement.id==="customBoard"){
+    const board=$("#customBoard");
+    const after = Array.from(board.children).find(el=>{
+      const rect = el.getBoundingClientRect();
+      return e.clientY <= rect.top + rect.height/2;
+    });
+    board.insertBefore(dragging, after||null);
+  }
+});
+function saveCustomFromBoard(){
+  const board=$("#customBoard");
+  const obj={};
+  Array.from(board.children).forEach(col=>{
+    const cat=col.dataset.cat;
+    const items=Array.from(col.querySelectorAll(".type-item")).map(x=>x.textContent);
+    obj[cat]=items;
+  });
+  saveCustomTypes(obj);
+}
+
+/* 新規カテゴリ追加 */
+$("#btnAddCat").addEventListener("click",()=>{
+  const name=$("#newCatName").value.trim(); if(!name) return;
+  const cust=loadCustomTypes(); if(!cust[name]) cust[name]=[];
+  saveCustomTypes(cust); $("#newCatName").value=""; buildBoard(); refreshAllTypeSelects(); toast("カテゴリーを追加しました");
+});
+
+/* 初期描画 */
+buildBoard();
+refreshAllTypeSelects();
+
+/* ダブルクリック防止付き 抽選ボタンは既に反映済み */
 </script>
+<button id="fab" class="fab">🎲</button>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

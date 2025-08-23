@@ -52,7 +52,6 @@
       cursor:pointer;
     }
     td select:focus{border-color:#666;outline:none}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef4ff;border:1px solid #cfe0ff;font-size:12px}
     .toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;opacity:0;transition:opacity .3s;z-index:999}
     .toast.show{opacity:1}
     .fab{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;border:none;border-radius:50%;width:56px;height:56px;font-size:24px;box-shadow:var(--shadow);cursor:pointer;display:none}
@@ -97,9 +96,13 @@
     </div>
     <hr />
     <div id="drawResult">まだ抽選していません。</div>
+    <div id="memoArea" style="display:none;margin-top:8px">
+      <textarea id="memoInput" rows="2" style="width:100%;border-radius:4px;border:1px solid #ccc;"></textarea>
+      <button id="btnSave" class="btn primary" style="margin-top:6px">確定して履歴に追加</button>
+    </div>
   </section>
 
-  <!-- 茶葉 -->
+  <!-- 茶葉リスト -->
   <section id="tab-table" class="card" style="display:none">
     <div style="overflow:auto;max-height:60vh">
       <table id="teaTable">
@@ -107,25 +110,7 @@
           <th>商品名</th><th>ブランド</th><th>種類(産地)</th><th>カフェイン</th><th>在庫</th>
           <th>賞味期限</th><th>基本重み</th><th>抽選対象</th><th>メモ</th>
         </tr></thead>
-        <tbody>
-          <!-- 初期5行 -->
-          ${[...Array(5)].map(()=>`
-            <tr>
-              <td contenteditable="true"></td>
-              <td contenteditable="true"></td>
-              <td contenteditable="true"></td>
-              <td>
-                <select><option value="">指定なし</option><option>有</option><option>無</option></select>
-              </td>
-              <td>
-                <select><option value="">指定なし</option><option>あり</option><option>なし</option></select>
-              </td>
-              <td class="editable"><input type="date"></td>
-              <td contenteditable="true">1</td>
-              <td><input type="checkbox" checked></td>
-              <td contenteditable="true"></td>
-            </tr>`).join("")}
-        </tbody>
+        <tbody id="teaBody"></tbody>
       </table>
     </div>
   </section>
@@ -158,7 +143,7 @@
       <label>K（強調係数） <input id="setK" type="number" step="0.1" value="2"></label>
       <label>recentN <input id="setRecentN" type="number" min="0" value="5"></label>
       <label>biasFactor <input id="setBias" type="number" step="0.1" value="0.5"></label>
-      <p>※値を変更すると即保存され、次回抽選から反映されます</p>
+      <p>※変更は即保存されます</p>
     </div>
   </section>
 </div>
@@ -171,40 +156,139 @@ const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2000);}
 let isDrawing=false; function setBtnLabel(label){$("#btnDraw").textContent=label;$("#fab").textContent=(label==="抽選する"?"🎲":"🔄");}
 
-// 設定保持
 function loadSettings(){return JSON.parse(localStorage.getItem("settings")||'{"D":60,"K":2,"recentN":5,"biasFactor":0.5,"mode":"recommended"}');}
 function saveSettings(s){localStorage.setItem("settings",JSON.stringify(s));}
+let settings=loadSettings();
+
+// 茶葉リスト初期化（5行）
+const teaBody=$("#teaBody");
+for(let i=0;i<5;i++){teaBody.appendChild(makeRow());}
+function makeRow(){
+  const tr=document.createElement("tr");
+  tr.innerHTML=`
+    <td contenteditable="true"></td>
+    <td contenteditable="true"></td>
+    <td contenteditable="true"></td>
+    <td><select><option value="">指定なし</option><option>有</option><option>無</option></select></td>
+    <td><select><option value="">指定なし</option><option>あり</option><option>なし</option></select></td>
+    <td class="editable"><input type="date"></td>
+    <td contenteditable="true">1</td>
+    <td><input type="checkbox" checked></td>
+    <td contenteditable="true"></td>`;
+  return tr;
+}
+
+// 履歴
+function loadHist(){return JSON.parse(localStorage.getItem("history")||"[]");}
+function saveHist(h){localStorage.setItem("history",JSON.stringify(h));}
+function renderHist(){
+  const h=loadHist(); const tb=$("#histTable tbody"); tb.innerHTML="";
+  h.slice().reverse().forEach(x=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${x.timestamp}</td><td>${x.name}</td><td>${x.brand}</td><td>${x.type}</td><td>${x.bestBefore||""}</td><td>${x.note||""}</td>`;
+    tb.appendChild(tr);
+  });
+}
+renderHist();
+
+// 抽選ロジック
+let currentPick=null;
+function drawTea(){
+  const rows=$$("#teaBody tr");
+  let cands=[];
+  rows.forEach(r=>{
+    const name=r.cells[0].innerText.trim();
+    if(!name)return;
+    const brand=r.cells[1].innerText.trim();
+    const type=r.cells[2].innerText.trim();
+    const caf=r.cells[3].querySelector("select").value;
+    const stock=r.cells[4].querySelector("select").value;
+    const bestBefore=r.cells[5].querySelector("input").value;
+    const baseW=parseFloat(r.cells[6].innerText.trim()||"1");
+    const enabled=r.cells[7].querySelector("input").checked;
+    const note=r.cells[8].innerText.trim();
+    if(enabled && stock==="あり"){
+      cands.push({name,brand,type,caf,stock,bestBefore,baseW,note});
+    }
+  });
+  if(!cands.length){$("#drawResult").textContent="候補がありません";return null;}
+  const now=new Date();
+  const mode=settings.mode;
+  const hist=loadHist(); let weights=[];
+  cands.forEach(c=>{
+    let w=1;
+    if(mode==="random"){w=1;}
+    else{
+      let daysLeft=c.bestBefore?Math.floor((new Date(c.bestBefore)-now)/(1000*60*60*24)):9999;
+      let urgency=0; if(daysLeft<settings.D){urgency=1-daysLeft/settings.D;if(urgency<0)urgency=0;if(urgency>1)urgency=1;}
+      w=c.baseW*(1+settings.K*urgency);
+      // recentN補正
+      const recent=hist.slice(-settings.recentN);
+      if(recent.find(x=>x.name===c.name)){w*=settings.biasFactor;}
+    }
+    weights.push(w);
+  });
+  const total=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*total,chosen=null;
+  for(let i=0;i<cands.length;i++){r-=weights[i];if(r<=0){chosen=cands[i];break;}}
+  currentPick=chosen;
+  return chosen;
+}
 
 // 抽選ボタン
 $("#btnDraw").addEventListener("click",()=>{
   if(isDrawing)return; isDrawing=true; setTimeout(()=>{isDrawing=false},400);
+  const pick=drawTea(); if(!pick)return;
   setBtnLabel("再抽選");
-  $("#drawResult").textContent="サンプル抽選結果（本実装でロジック反映）";
+  $("#drawResult").innerHTML=`<b>${pick.name}</b> (${pick.brand||""}) - ${pick.type||""} ${pick.caf||""}`;
+  $("#memoArea").style.display="block";
 });
-$("#fab").addEventListener("click",()=>$("#btnDraw").click());
+
+// 確定
+$("#btnSave").addEventListener("click",()=>{
+  if(!currentPick)return;
+  const hist=loadHist();
+  hist.push({...currentPick,timestamp:new Date().toLocaleString(),note:$("#memoInput").value});
+  saveHist(hist); renderHist();
+  toast("保存しました");
+  $("#drawResult").textContent="まだ抽選していません。";$("#memoArea").style.display="none";$("#memoInput").value="";
+  setBtnLabel("抽選する");
+  currentPick=null;
+});
 
 // CSV保存
-$("#btnExportHistory").addEventListener("click",()=>{if(confirm("履歴CSVを保存しますか？"))toast("保存しました");});
-$("#btnClearHist").addEventListener("click",()=>{if(confirm("履歴と重み設定を初期化します。よろしいですか？")){localStorage.removeItem("settings");toast("初期化しました");}});
+$("#btnExportHistory").addEventListener("click",()=>{
+  if(!confirm("履歴CSVを保存しますか？"))return;
+  const hist=loadHist(); if(!hist.length){toast("履歴なし");return;}
+  let csv="日時,商品名,ブランド,種類,賞味期限,メモ\n";
+  hist.forEach(h=>{csv+=`${h.timestamp},${h.name},${h.brand},${h.type},${h.bestBefore||""},${h.note||""}\n`;});
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="tea-history.csv";a.click();
+  toast("保存しました");
+});
+
+// 初期化
+$("#btnClearHist").addEventListener("click",()=>{if(confirm("履歴と重み設定を初期化します。よろしいですか？")){localStorage.removeItem("history");localStorage.removeItem("settings");settings=loadSettings();renderHist();toast("初期化しました");}});
 
 // タブ切替
 $$(".tab").forEach(b=>b.addEventListener("click",()=>{ $$(".tab").forEach(t=>t.classList.remove("active")); b.classList.add("active"); ["draw","table","history","settings"].forEach(id=>$("#tab-"+id).style.display=(b.dataset.tab===id)?"block":"none"); }));
 // サブタブ
 $$(".subtab").forEach(b=>b.addEventListener("click",()=>{ $$(".subtab").forEach(t=>t.classList.remove("active")); b.classList.add("active"); $("#sub-simple").style.display=(b.dataset.sub==="simple")?"block":"none"; $("#sub-advanced").style.display=(b.dataset.sub==="advanced")?"block":"none"; }));
 
-// 上級設定（即保存）
+// 上級設定 即保存
 ["setD","setK","setRecentN","setBias"].forEach(id=>{
+  $("#"+id).value=settings[id.replace("set","").toLowerCase()]||$("#"+id).value;
   $("#"+id).addEventListener("input",()=>{
-    const s=loadSettings();
-    s.D=parseInt($("#setD").value)||60;
-    s.K=parseFloat($("#setK").value)||2;
-    s.recentN=parseInt($("#setRecentN").value)||5;
-    s.biasFactor=parseFloat($("#setBias").value)||0.5;
-    saveSettings(s);
-    toast("設定を保存しました");
+    settings.D=parseInt($("#setD").value)||60;
+    settings.K=parseFloat($("#setK").value)||2;
+    settings.recentN=parseInt($("#setRecentN").value)||5;
+    settings.biasFactor=parseFloat($("#setBias").value)||0.5;
+    saveSettings(settings);toast("設定を保存しました");
   });
 });
-$("#mode").addEventListener("change",()=>{const s=loadSettings();s.mode=$("#mode").value;saveSettings(s);toast("モードを変更しました");});
+$("#mode").value=settings.mode;
+$("#mode").addEventListener("change",()=>{settings.mode=$("#mode").value;saveSettings(settings);toast("モードを変更しました");});
+$("#fab").addEventListener("click",()=>$("#btnDraw").click());
 </script>
 </body>
 </html>

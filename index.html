@@ -281,41 +281,64 @@ const DEFAULT_TYPES = {
   "中国": ["キーマン","ラプサンスーチョン"],
   "フレーバー/ブレンド": ["ブレンド","アールグレイ","フレーバード","ルイボス"]
 };
+  
+// 無効な値を除去し、完全に空ならデフォルトを埋める
+function sanitizeTypeSchemaRaw(input){
+  const out = {};
+  let total = 0;
+  let changed = false;
+
+  if(!input || typeof input !== "object" || Array.isArray(input)){
+    return { obj: JSON.parse(JSON.stringify(DEFAULT_TYPES)), total:
+      Object.values(DEFAULT_TYPES).reduce((a,arr)=>a+arr.length,0), changed: true };
+  }
+
+  Object.keys(input).forEach(k=>{
+    const cat = String(k).trim();
+    let arr = input[k];
+    if(!Array.isArray(arr)){ arr = []; changed = true; }
+    const clean = arr
+      .map(v => (typeof v === "string" ? v.trim() : ""))
+      .filter(v => v); // 空文字など除去
+    if(clean.length !== arr.length || cat !== k){ changed = true; }
+    out[cat] = clean;
+    total += clean.length;
+  });
+
+  if(total === 0){
+    // 子が1件も無ければデフォルトをまるごと注入（既存カテゴリは残す）
+    Object.keys(DEFAULT_TYPES).forEach(cat=>{
+      out[cat] = (out[cat] && out[cat].length) ? out[cat] : DEFAULT_TYPES[cat].slice();
+    });
+    total = Object.values(out).reduce((a,arr)=>a+arr.length,0);
+    changed = true;
+  }
+  return { obj: out, total, changed };
+}
 function loadTypeSchema(){
   let raw = localStorage.getItem("typeSchema");
   if(!raw){
     const legacy = localStorage.getItem("types");
     if(legacy){ localStorage.setItem("typeSchema", legacy); raw = legacy; }
   }
-  let obj = null;
-  try { obj = raw ? JSON.parse(raw) : null; } catch(e){ obj = null; }
+  let parsed = null;
+  try { parsed = raw ? JSON.parse(raw) : null; } catch(e){ parsed = null; }
 
-  const defaults = JSON.parse(JSON.stringify(DEFAULT_TYPES));
-  let changed = false;
-
-  if(!obj || typeof obj !== "object" || Array.isArray(obj)){
-    obj = defaults; changed = true;
-  }else{
-    // 値が配列でないものは配列化
-    Object.keys(obj).forEach(k=>{
-      if(!Array.isArray(obj[k])){ obj[k] = []; changed = true; }
-    });
-    // 全カテゴリ合計で子要素が0なら、デフォルトをマージ（＝初期データ復旧）
-    const totalItems = Object.values(obj).reduce((n,arr)=> n + (Array.isArray(arr)?arr.length:0), 0);
-    if(totalItems === 0){
-      Object.keys(defaults).forEach(cat=>{
-        if(!obj[cat] || obj[cat].length === 0){
-          obj[cat] = defaults[cat].slice();
-        }
-      });
-      changed = true;
-    }
+  const { obj, changed } = sanitizeTypeSchemaRaw(parsed);
+  if(changed){
+    localStorage.setItem("typeSchema", JSON.stringify(obj));
   }
-  if(changed) localStorage.setItem("typeSchema", JSON.stringify(obj));
   return obj;
 }
 
-function saveTypeSchema(obj){ localStorage.setItem("typeSchema", JSON.stringify(obj)); }
+function saveTypeSchema(obj){
+  const { obj: cleaned } = sanitizeTypeSchemaRaw(obj);
+  localStorage.setItem("typeSchema", JSON.stringify(cleaned));
+  // どこから保存されても UI を最新化
+  if (typeof buildTypeBoard === "function") buildTypeBoard();
+  if (typeof refreshAllTypeSelects === "function") refreshAllTypeSelects();
+}
+
 
 /* ========= SELECT RENDER ========= */
 function renderBrandOptions(sel, selected=""){

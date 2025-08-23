@@ -27,49 +27,49 @@
   th,td{border-bottom:1px solid #eef1f6;padding:6px;text-align:left;font-size:14px;vertical-align:top}
   th{background:#fafbfc;position:sticky;top:0;z-index:1}
 
-  /* 入力セルの見た目 */
+  /* 入力セルの背景 */
   td.editable,
   td.editable input[type="date"]{background:#f1f3f6;border-radius:6px}
-  td.editable:focus-within,
-  td.editable input[type="date"]:focus{background:#fff;border:1px solid #666;outline:none}
 
-  /* テーブルのレイアウト固定＋列幅 */
+  /* ========== 茶葉リストの列幅（固定） ========== */
   #teaTable{table-layout:fixed}
-  #teaTable .col-name   { width: 280px; }  /* 商品名 */
-  #teaTable .col-brand  { width: 160px; }
-  #teaTable .col-type   { width: 200px; }
-  #teaTable .col-caf    { width: 90px; }
-  #teaTable .col-stock  { width: 90px; }
-  #teaTable .col-date   { width: 160px; }
-  #teaTable .col-note   { width: 1fr; }    /* 残り領域 */
-  #teaTable .col-weight { width: 120px; }
   #teaTable td,#teaTable th{overflow:hidden}
-
-  /* セル内フォームはセル幅にフィット */
+  /* colgroup: 合計100% */
+  #teaTable .col-name   { width:22%; }  /* 商品名 */
+  #teaTable .col-brand  { width:12%; }
+  #teaTable .col-type   { width:16%; }
+  #teaTable .col-caf    { width:8%; }
+  #teaTable .col-stock  { width:8%; }
+  #teaTable .col-date   { width:14%; }
+  #teaTable .col-note   { width:14%; }  /* メモ */
+  #teaTable .col-weight { width:6%; }
+  /* セル内フォームはセルに収める */
   #teaTable input[type="text"],
   #teaTable input[type="number"],
   #teaTable input[type="date"],
   #teaTable select{
-    width:100%; max-width:100%; box-sizing:border-box;
+    width:100%; max-width:100%; min-width:0;
+    box-sizing:border-box;
     border:1px solid #c8cdd6; border-radius:6px; background:#fff; padding:6px 8px;
   }
   #teaTable select{padding:4px 8px}
-  #teaTable input[type="text"], #teaTable input[type="number"]{background:#fff}
   #teaTable input[type="text"]:focus,
   #teaTable input[type="number"]:focus,
+  #teaTable input[type="date"]:focus,
   #teaTable select:focus{outline:none;border-color:#666}
-
-  /* 商品名は省略表示、メモは折り返し */
-  #teaTable td:nth-child(1) input[type="text"]{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
-  #teaTable td:nth-child(7) input[type="text"]{white-space:normal;text-overflow:clip;overflow:visible}
-
-  /* スマホ調整 */
+  /* 商品名は省略表示、メモもはみ出し禁止 */
+  #teaTable td:nth-child(1) input[type="text"],
+  #teaTable td:nth-child(7) input[type="text"]{
+    white-space:nowrap;text-overflow:ellipsis;overflow:hidden;
+  }
+  /* スマホ時は少し比率調整 */
   @media (max-width:640px){
-    #teaTable .col-name{width:220px}
-    #teaTable .col-type{width:180px}
+    #teaTable .col-name{width:20%}
+    #teaTable .col-type{width:18%}
+    #teaTable .col-note{width:16%}
   }
 
-  /* 通常フォーム類 */
+  /* 通常フォーム */
   select{background:#fff;padding:4px;border:1px solid #ccc;border-radius:4px;cursor:pointer}
   select:focus{border-color:#666;outline:none}
   input[type="text"],input[type="number"]{width:100%;padding:6px 8px;border:1px solid #c8cdd6;border-radius:6px;background:#fff}
@@ -288,9 +288,16 @@ function loadTypeSchema(){
     if(legacy){ localStorage.setItem("typeSchema", legacy); raw=legacy; }
   }
   let obj=null; try{ obj = raw ? JSON.parse(raw) : null; }catch(e){ obj=null; }
-  if(!obj || typeof obj!=="object" || Object.keys(obj).length===0){
+  // 空・壊れ・配列/型不整合を自動修復
+  if(!obj || typeof obj!=="object" || Array.isArray(obj) || Object.keys(obj).length===0){
     obj = JSON.parse(JSON.stringify(DEFAULT_TYPES));
     localStorage.setItem("typeSchema", JSON.stringify(obj));
+  }else{
+    let changed=false;
+    Object.keys(obj).forEach(k=>{
+      if(!Array.isArray(obj[k])){ obj[k]=[]; changed=true; }
+    });
+    if(changed) localStorage.setItem("typeSchema", JSON.stringify(obj));
   }
   return obj;
 }
@@ -318,15 +325,20 @@ function renderBrandOptions(sel, selected=""){
     }
   };
 }
+
 function renderTypeSelect(sel, selected=""){
   const schema = loadTypeSchema();
+  // デフォルトが消えていた場合もここで復旧
+  if(!schema || Object.keys(schema).length===0){
+    saveTypeSchema(DEFAULT_TYPES);
+  }
   sel.innerHTML = '';
   sel.appendChild(new Option('---','')); // テーブル側の初期表示
 
-  // 大カテゴリ（選択可能）＋下層はフラット表示（インデント）
+  // 大カテゴリ（選択可）＋下層はインデントでフラット表示
   Object.keys(schema).forEach(cat=>{
-    sel.appendChild(new Option(cat, cat)); // 大カテゴリ
-    schema[cat].forEach(name=>{
+    sel.appendChild(new Option(cat, cat)); // 大カテゴリ自体を選べる
+    (schema[cat]||[]).forEach(name=>{
       sel.appendChild(new Option("　┗ " + name, name));
     });
   });
@@ -350,18 +362,23 @@ function renderTypeSelect(sel, selected=""){
     }
   };
 }
+
 function renderDrawTypeFilter(sel, selected=""){
   const schema = loadTypeSchema();
+  if(!schema || Object.keys(schema).length===0){
+    saveTypeSchema(DEFAULT_TYPES);
+  }
   sel.innerHTML = '';
   sel.appendChild(new Option('すべて','')); // 抽選画面の初期
   Object.keys(schema).forEach(cat=>{
     sel.appendChild(new Option(cat, cat));
-    schema[cat].forEach(name=>{
+    (schema[cat]||[]).forEach(name=>{
       sel.appendChild(new Option("　┗ " + name, name));
     });
   });
   sel.value = selected || "";
 }
+
 function refreshAllTypeSelects(){
   renderDrawTypeFilter($("#fType"), $("#fType").value);
   $$(".typeSel").forEach(s=> renderTypeSelect(s, s.value) );
@@ -433,7 +450,7 @@ function drawTea(){
       else{ if(type!==fType) return; }
     }
 
-    // カフェインフィルタ（すべて=無条件）
+    // カフェイン（すべてならフィルタしない）
     if(fCaf && caf!==fCaf) return;
 
     // フリーワード

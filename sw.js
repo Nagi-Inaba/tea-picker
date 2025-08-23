@@ -1,5 +1,5 @@
-// Simple offline cache for PWA
-const CACHE = 'tea-picker-cache-v1';
+// Simple cache for offline
+const CACHE = 'tea-picker-simple-v1';
 const ASSETS = ['/', './', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', (e)=>{
@@ -11,13 +11,11 @@ self.addEventListener('activate', (e)=>{
   self.clients.claim();
 });
 self.addEventListener('fetch', (e)=>{
-  const req = e.request;
   e.respondWith(
-    caches.match(req).then(cached=> cached || fetch(req).then(res=>{
-      // Optional: cache new GET requests
-      if(req.method==='GET'){
+    caches.match(e.request).then(cached=> cached || fetch(e.request).then(res=>{
+      if(e.request.method==='GET'){
         const copy = res.clone();
-        caches.open(CACHE).then(c=>c.put(req, copy));
+        caches.open(CACHE).then(c=>c.put(e.request, copy));
       }
       return res;
     }).catch(()=> cached || new Response('オフラインです', {status:200})) )

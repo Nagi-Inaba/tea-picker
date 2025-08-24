@@ -294,7 +294,14 @@
 /* ========= UTILS ========= */
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2000);}
-let isDrawing=false; function setBtnLabel(label){$("#btnDraw").textContent=label;$("#fab").textContent=(label==="抽選する"?"🎲":"🔄");}
+let isDrawing = false;
+function setBtnLabel(label){
+  const btn = $("#btnDraw");
+  if (btn) btn.textContent = label;
+  
+}
+
+
 
 function saveTeaList(items){
   localStorage.setItem("teaItems", JSON.stringify(items || []));
@@ -842,7 +849,7 @@ $("#btnDraw").addEventListener("click",()=>{
   $("#drawResult").innerHTML=`<b>${pick.name}</b> ${pick.brand?`(${pick.brand})`:""} - ${pick.type||""} ${pick.caf||""} ${badge}`;
   $("#memoArea").style.display="block";
 });
-$("#fab")?.addEventListener("click",()=>$("#btnDraw").click());
+
 
 /* 確定 */
 $("#btnSave").addEventListener("click",()=>{

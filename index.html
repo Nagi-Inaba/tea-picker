@@ -89,6 +89,9 @@
     #teaTable .col-note{width:15%}
     #teaTable .col-weight{width:12%}
   }
+  @media (max-width:768px), (hover:none) and (pointer:coarse) {
+  .fab { display: none !important; }
+}
 
   /* 通常フォーム */
   select{background:#fff;padding:4px;border:1px solid #ccc;border-radius:4px;cursor:pointer}
@@ -285,7 +288,6 @@
   </section>
 </div>
 
-<button id="fab" class="fab">🎲</button>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -840,7 +842,7 @@ $("#btnDraw").addEventListener("click",()=>{
   $("#drawResult").innerHTML=`<b>${pick.name}</b> ${pick.brand?`(${pick.brand})`:""} - ${pick.type||""} ${pick.caf||""} ${badge}`;
   $("#memoArea").style.display="block";
 });
-$("#fab").addEventListener("click",()=>$("#btnDraw").click());
+$("#fab")?.addEventListener("click",()=>$("#btnDraw").click());
 
 /* 確定 */
 $("#btnSave").addEventListener("click",()=>{

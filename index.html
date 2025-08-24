@@ -193,7 +193,7 @@
 </head>
 <body>
 <header>
-  <h1>TeaChoice</h1>
+  <h1>TeaChoice - 今日の一杯をランダムに</h1>
 </header>
 
 <div class="wrap">
@@ -217,7 +217,9 @@
           <option value="なし">なし</option>
         </select>
       </label>
-      <label>フリーワード <input id="fKeyword" placeholder="商品名・種類・産地・メモで検索"></label>
+      <input id="fKeyword" placeholder="商品名・種類・産地・メモで検索"
+       autocomplete="off" autocapitalize="off" autocorrect="off" inputmode="text">
+
       <span id="countInfo" class="muted"></span>
     </div>
     <div style="margin:12px 0;">
@@ -553,17 +555,23 @@ function renderAllBrandSelects(){
 function makeRow(){
   const tr=document.createElement("tr");
   tr.innerHTML=`
-    <td class="editable" data-label="商品名"><input type="text" placeholder="商品名"></td>
+    <td class="editable" data-label="商品名">
+      <input type="text" placeholder="商品名"
+             autocomplete="off" autocapitalize="off" autocorrect="off" inputmode="text">
+    </td>
     <td data-label="販売店・茶園"><select class="brandSel"></select></td>
     <td data-label="種類・産地"><select class="typeSel"></select></td>
     <td data-label="カフェイン"><select><option>あり</option><option>なし</option></select></td>
     <td data-label="在庫"><select><option selected>あり</option><option>なし</option></select></td>
     <td class="editable" data-label="賞味期限"><input type="date"></td>
-    <td class="editable" data-label="メモ"><input type="text" placeholder="メモ"></td>
+    <td class="editable" data-label="メモ">
+      <input type="text" placeholder="メモ"
+             autocomplete="off" autocapitalize="off" autocorrect="off" inputmode="text">
+    </td>
     <td class="editable" data-label="当選倍率">
       <div class="weightWrap">
-        <input type="number" step="0.1" value="1"
-          title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります（例：2 で約2倍、0.5 で約半分）。">
+        <input type="number" step="0.1" min="0.1" value="1" inputmode="decimal"
+               title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります（例：2 で約2倍、0.5 で約半分）。">
         <button type="button" class="row-del" title="この行を削除">×</button>
       </div>
     </td>`;
@@ -571,6 +579,7 @@ function makeRow(){
   renderTypeSelect(tr.querySelector(".typeSel"));
   return tr;
 }
+
 
 
 

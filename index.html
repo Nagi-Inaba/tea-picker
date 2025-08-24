@@ -199,9 +199,14 @@
   /* 倍率＋削除を縦にも並べやすく */
   #teaTable .weightWrap {
     display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    align-items: center;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    align-items: stretch;
+    margin-top: 4px;
+  }
+  #teaTable .weightWrap .row-del {
+    width: 100%;
+    padding: 8px 12px;
   }
 
   /* 抽選フィルタ行は縦積み */

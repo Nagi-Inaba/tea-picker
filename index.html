@@ -227,7 +227,7 @@
         <p>Kを<b>大きく</b>すると最大当選倍率が高くなります。</p>
         <p><b>当選倍率</b>：<code>当選倍率 = 基本倍率 × (1 + K × 緊急度) × バイアス</code></p>
         <p><b>緊急度</b>：<code>緊急度 = clamp(1 − 残日数 / D, 0, 1)、※clamp(x, 0, 1) = x を 0〜1 の範囲に収める関数（0未満なら0、1を超えたら1になる）</code>（＝「D日」を100%と見たときの進み具合）。Dを<b>大きく</b>すると賞味期限接近による当選倍率の上乗せ開始時期が早まります。</p>
-        <p><b>バイアス</b>：<code>biasFactor</code> は「<code>recentN</code>=直近N回以内に当選した銘柄」の重みをどれだけ下げるか。</p>
+        <p><b>バイアス</b>：<code>biasFactor</code> は「<code>recentN</code>=直近N回以内に当選した銘柄」の当選倍率をどれだけ下げるか。</p>
         <p>例：<code>recentN</code>を5、<code>biasFactor</code>を0.5にした場合は、直近5回に当選した茶葉の当選確率を0.5倍(半分)にする。</p>
       </div>
       <p class="muted">※変更は即保存され、次回抽選から反映されます</p>
@@ -261,6 +261,17 @@
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2000);}
 let isDrawing=false; function setBtnLabel(label){$("#btnDraw").textContent=label;$("#fab").textContent=(label==="抽選する"?"🎲":"🔄");}
+
+function saveTeaList(items){
+  localStorage.setItem("teaItems", JSON.stringify(items || []));
+}
+function loadTeaList(){
+  try{
+    const raw = localStorage.getItem("teaItems");
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  }catch(e){ return []; }
+}
 
 /* ========= SETTINGS ========= */
 function loadSettings(){
@@ -437,8 +448,6 @@ function renderAllBrandSelects(){
 }
 
 /* ========= TABLE (5 empty rows) ========= */
-const teaBody=$("#teaBody");
-for(let i=0;i<5;i++){ teaBody.appendChild(makeRow()); }
 function makeRow(){
   const tr=document.createElement("tr");
   tr.innerHTML=`
@@ -454,6 +463,56 @@ function makeRow(){
   renderTypeSelect(tr.querySelector(".typeSel"));
   return tr;
 }
+function readTableToArray(){
+  const rows = Array.from(document.querySelectorAll("#teaBody tr"));
+  return rows.map(r=>{
+    const name = r.cells[0].querySelector("input")?.value?.trim() || "";
+    const brand = r.cells[1].querySelector("select")?.value || "";
+    const type  = r.cells[2].querySelector("select")?.value || "";
+    const caf   = r.cells[3].querySelector("select")?.value || "あり";
+    const stock = r.cells[4].querySelector("select")?.value || "あり";
+    const bestBefore = r.cells[5].querySelector("input")?.value || "";
+    const note  = r.cells[6].querySelector("input")?.value?.trim() || "";
+    const baseW = parseFloat(r.cells[7].querySelector("input")?.value || "1");
+    return { name, brand, type, caf, stock, bestBefore, note, baseW: isFinite(baseW)?baseW:1 };
+  }).filter(row => Object.values(row).some(v => String(v||"").length)); // 全部空行は省く
+}
+
+function renderTableFromArray(items){
+  const tb = document.querySelector("#teaBody");
+  tb.innerHTML = "";
+  (items && items.length ? items : Array(5).fill(null)).forEach((itm)=>{
+    const tr = makeRow();
+    tb.appendChild(tr);
+    if(!itm) return;
+    tr.cells[0].querySelector("input").value = itm.name || "";
+    renderBrandOptions(tr.cells[1].querySelector("select"), itm.brand || "");
+    renderTypeSelect(tr.cells[2].querySelector("select"), itm.type || "");
+    tr.cells[3].querySelector("select").value = itm.caf || "あり";
+    tr.cells[4].querySelector("select").value = itm.stock || "あり";
+    tr.cells[5].querySelector("input").value = itm.bestBefore || "";
+    tr.cells[6].querySelector("input").value = itm.note || "";
+    tr.cells[7].querySelector("input").value = (typeof itm.baseW==="number" && isFinite(itm.baseW)) ? itm.baseW : 1;
+  });
+}
+// デバウンス関数（連続入力の保存をまとめる）
+function debounce(fn, delay){
+  let timer;
+  return (...args)=>{
+    clearTimeout(timer);
+    timer = setTimeout(()=>fn(...args), delay);
+  };
+}
+  
+const teaBody = document.querySelector("#teaBody");
+  
+// 自動保存イベント
+const saveTeaListDebounced = debounce(
+  ()=> saveTeaList(readTableToArray()), 
+500);
+
+teaBody.addEventListener("input", saveTeaListDebounced);
+teaBody.addEventListener("change", saveTeaListDebounced);
 
 /* ========= HISTORY ========= */
 function loadHist(){return JSON.parse(localStorage.getItem("history")||"[]");}
@@ -518,7 +577,7 @@ function drawTea(){
 
   const weights=cands.map(c=>{
     if(mode==="random") return 1;
-    if(!c.bestBefore) return c.baseW; // 期限未設定→基本重みのみ
+    if(!c.bestBefore) return c.baseW; // 期限未設定→基本倍率のみ
     const daysLeft = Math.floor((new Date(c.bestBefore)-now)/(1000*60*60*24));
     let urgency = 0;
     if(daysLeft < D) urgency = Math.max(0, Math.min(1, 1 - (daysLeft/D)));
@@ -569,7 +628,7 @@ $("#btnExportHistory").addEventListener("click",()=>{
 
 /* 初期化 */
 $("#btnClearHist").addEventListener("click",()=>{
-  if(confirm("履歴と重み設定を初期化します。よろしいですか？")){
+  if(confirm("履歴と倍率設定を初期化します。よろしいですか？")){
     localStorage.removeItem("history"); localStorage.removeItem("settings");
     settings=loadSettings(); renderHist(); toast("初期化しました");
     $("#mode").value="recommended";
@@ -876,6 +935,7 @@ function renderAll(){
   refreshAllTypeSelects();
   $("#mode").value = settings.mode || "recommended";
   $("#fCaf").value = "";
+  renderTableFromArray(loadTeaList());
 }
 renderAll();
 </script>

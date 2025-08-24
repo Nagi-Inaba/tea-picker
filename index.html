@@ -27,6 +27,8 @@
   th,td{border-bottom:1px solid #eef1f6;padding:6px;text-align:left;font-size:14px;vertical-align:top}
   th{background:#fafbfc;position:sticky;top:0;z-index:1}
 
+  .teaTableWrap{overflow:auto;max-height:60vh;}
+
   /* 入力セルの背景 */
   td.editable,
   td.editable input[type="date"]{background:#f1f3f6;border-radius:6px}
@@ -88,6 +90,7 @@
     #teaTable .col-type{width:17%}
     #teaTable .col-note{width:15%}
     #teaTable .col-weight{width:12%}
+    .teaTableWrap{overflow:visible;max-height:none;}
   }
   @media (max-width:768px), (hover:none) and (pointer:coarse) {
   .fab { display: none !important; }
@@ -246,7 +249,7 @@
   <button id="btnAddRow" class="btn">＋ 行を追加</button>
   <input id="importTeaFile" type="file" accept=".json,.csv,application/json,text/csv" style="display:none">
  </div>
-    <div style="overflow:auto;max-height:60vh">
+    <div class="teaTableWrap">
       <table id="teaTable">
         <colgroup>
           <col class="col-name">

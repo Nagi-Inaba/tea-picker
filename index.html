@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>TeaChoice - 今日の一杯をランダムに</title>
+<title>TeaChoice - 今日何飲む</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#ffffff">
 <style>
@@ -193,7 +193,7 @@
 </head>
 <body>
 <header>
-  <h1>TeaChoice - 今日の一杯をランダムに</h1>
+  <h1>TeaChoice - 今日何飲む</h1>
 </header>
 
 <div class="wrap">
@@ -354,6 +354,19 @@ function applyMobileClass() {
 }
 mqMobile.addEventListener?.('change', applyMobileClass);
 applyMobileClass();
+
+function toggleMobileSections() {
+  const isM = document.body.classList.contains('is-mobile');
+  // 抽選カードの出し分け（必要に応じて）
+  const tabs = document.querySelector('.tabs');
+  if (tabs) tabs.style.display = isM ? 'flex' : 'flex'; // そのままタブ使うなら両方flexでOK
+  // もし「スマホでは最初に抽選タブだけ見せたい」なら下の1行を有効化
+  // ["draw","table","history","settings"].forEach(id=>document.querySelector("#tab-"+id).style.display=(id==="draw"||!isM)?"block":"none");
+}
+
+// ⭐ 初期化の“前”＝ renderAll() を呼ぶ前に 1回だけ呼んでおく
+toggleMobileSections();
+
 
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2000);}
@@ -555,30 +568,27 @@ function renderAllBrandSelects(){
 function makeRow(){
   const tr=document.createElement("tr");
   tr.innerHTML=`
-    <td class="editable" data-label="商品名">
-      <input type="text" placeholder="商品名"
-             autocomplete="off" autocapitalize="off" autocorrect="off" inputmode="text">
-    </td>
-    <td data-label="販売店・茶園"><select class="brandSel"></select></td>
-    <td data-label="種類・産地"><select class="typeSel"></select></td>
-    <td data-label="カフェイン"><select><option>あり</option><option>なし</option></select></td>
-    <td data-label="在庫"><select><option selected>あり</option><option>なし</option></select></td>
-    <td class="editable" data-label="賞味期限"><input type="date"></td>
-    <td class="editable" data-label="メモ">
-      <input type="text" placeholder="メモ"
-             autocomplete="off" autocapitalize="off" autocorrect="off" inputmode="text">
-    </td>
-    <td class="editable" data-label="当選倍率">
-      <div class="weightWrap">
-        <input type="number" step="0.1" min="0.1" value="1" inputmode="decimal"
-               title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります（例：2 で約2倍、0.5 で約半分）。">
-        <button type="button" class="row-del" title="この行を削除">×</button>
-      </div>
-    </td>`;
+  
+  <td class="editable" data-label="商品名"><input type="text" placeholder="商品名"></td>
+  <td data-label="販売店・茶園"><select class="brandSel"></select></td>
+  <td data-label="種類・産地"><select class="typeSel"></select></td>
+  <td data-label="カフェイン"><select><option>あり</option><option>なし</option></select></td>
+  <td data-label="在庫"><select><option selected>あり</option><option>なし</option></select></td>
+  <td class="editable" data-label="賞味期限"><input type="date"></td>
+  <td class="editable" data-label="メモ"><input type="text" placeholder="メモ"></td>
+  <td class="editable" data-label="当選倍率">
+    <div class="weightWrap">
+      <input type="number" step="0.1" value="1" title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります。">
+      <button type="button" class="row-del" title="この行を削除">×</button>
+    </div>
+  </td>
+ `;
   renderBrandOptions(tr.querySelector(".brandSel"));
   renderTypeSelect(tr.querySelector(".typeSel"));
   return tr;
 }
+  
+
 
 
 
@@ -1256,6 +1266,7 @@ function renderAll(){
   $("#fCaf").value = "";
   renderTableFromArray(loadTeaList());
 }
+  
 renderAll();
 </script>
 

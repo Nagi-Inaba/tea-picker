@@ -36,13 +36,13 @@
   #teaTable td,#teaTable th{overflow:hidden}
   /* colgroup: 合計100% */
   #teaTable .col-name   { width:16%; }  /* 商品名 */
-  #teaTable .col-brand  { width:12%; }
+  #teaTable .col-brand  { width:16%; }
   #teaTable .col-type   { width:16%; }
-  #teaTable .col-caf    { width:6%; }
-  #teaTable .col-stock  { width:6%; }
+  #teaTable .col-caf    { width:7%; }
+  #teaTable .col-stock  { width:7%; }
   #teaTable .col-date   { width:14%; }
-  #teaTable .col-note   { width:14%; }  /* メモ */
-  #teaTable .col-weight { width:10%; }
+  #teaTable .col-note   { width:12%; }  /* メモ */
+  #teaTable .col-weight { width:11%; }
   /* セル内フォームはセルに収める */
   #teaTable input[type="text"],
   #teaTable input[type="number"],
@@ -491,7 +491,7 @@ function makeRow(){
       <div class="weightWrap">
         <input type="number" step="0.1" value="1"
           title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります（例：2 で約2倍、0.5 で約半分）。">
-        <button type="button" class="row-del" title="この行を削除">削除</button>
+        <button type="button" class="row-del" title="この行を削除">×</button>
       </div>
     </td>`;
   renderBrandOptions(tr.querySelector(".brandSel"));

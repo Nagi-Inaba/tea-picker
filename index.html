@@ -139,6 +139,18 @@
   .item .del{border:1px solid #b00020;background:#fff;color:#b00020;font-size:14px;border-radius:6px;cursor:pointer;padding:2px 6px}
   .row{display:flex;gap:6px;margin-top:6px}
 
+  #teaTable .cell-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   /* ===== モバイル専用レイアウト（カード表示） ===== */
 @media (max-width: 640px), (hover:none) and (pointer:coarse) {
   /* テーブルをカードに */
@@ -155,17 +167,25 @@
   }
   #teaTable td {
     display: grid;
-    grid-template-columns: 7.5em 1fr; /* 左にラベル、右に入力 */
-    gap: 6px 10px;
+    grid-template-columns: 1fr; /* ラベルを上に配置 */
+    gap: 4px;
     border: 0;
     padding: 8px 4px;
     background: transparent;
   }
-  #teaTable td::before {
-    content: attr(data-label);
+  #teaTable td::before { display: none; }
+  #teaTable .cell-label {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0 0 4px;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    display: block;
     color: #666;
     font-size: 12px;
-    align-self: center;
   }
 
   /* 入力UIを詰めすぎないように */
@@ -374,6 +394,7 @@ toggleMobileSections();
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2000);}
 let isDrawing = false;
+let rowIdCounter = 0;
 function setBtnLabel(label){
   const btn = $("#btnDraw");
   if (btn) btn.textContent = label;
@@ -568,28 +589,29 @@ function renderAllBrandSelects(){
 }
 
 /* ========= TABLE (5 empty rows) ========= */
-function makeRow(){
-  const tr=document.createElement("tr");
-  tr.innerHTML=`
-  
-  <td class="editable" data-label="商品名"><input type="text" placeholder="商品名"></td>
-  <td data-label="販売店・茶園"><select class="brandSel"></select></td>
-  <td data-label="種類・産地"><select class="typeSel"></select></td>
-  <td data-label="カフェイン"><select><option>あり</option><option>なし</option></select></td>
-  <td data-label="在庫"><select><option selected>あり</option><option>なし</option></select></td>
-  <td class="editable" data-label="賞味期限"><input type="date"></td>
-  <td class="editable" data-label="メモ"><input type="text" placeholder="メモ"></td>
-  <td class="editable" data-label="当選倍率">
+  function makeRow(){
+    const tr=document.createElement("tr");
+    const id = `row-${++rowIdCounter}`;
+    tr.innerHTML=`
+
+  <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名"></td>
+  <td><label for="${id}-brand" class="cell-label">販売店・茶園</label><select id="${id}-brand" class="brandSel"></select></td>
+  <td><label for="${id}-type" class="cell-label">種類・産地</label><select id="${id}-type" class="typeSel"></select></td>
+  <td><label for="${id}-caf" class="cell-label">カフェイン</label><select id="${id}-caf"><option>あり</option><option>なし</option></select></td>
+  <td><label for="${id}-stock" class="cell-label">在庫</label><select id="${id}-stock"><option selected>あり</option><option>なし</option></select></td>
+  <td class="editable"><label for="${id}-best" class="cell-label">賞味期限</label><input id="${id}-best" type="date"></td>
+  <td class="editable"><label for="${id}-note" class="cell-label">メモ</label><input id="${id}-note" type="text" placeholder="メモ"></td>
+  <td class="editable"><label for="${id}-weight" class="cell-label">当選倍率</label>
     <div class="weightWrap">
-      <input type="number" step="0.1" value="1" title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります。">
+      <input id="${id}-weight" type="number" step="0.1" value="1" title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります。">
       <button type="button" class="row-del" title="この行を削除">×</button>
     </div>
   </td>
  `;
-  renderBrandOptions(tr.querySelector(".brandSel"));
-  renderTypeSelect(tr.querySelector(".typeSel"));
-  return tr;
-}
+    renderBrandOptions(tr.querySelector(".brandSel"));
+    renderTypeSelect(tr.querySelector(".typeSel"));
+    return tr;
+  }
   
 
 

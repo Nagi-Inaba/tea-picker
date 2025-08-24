@@ -139,6 +139,8 @@
   .item .del{border:1px solid #b00020;background:#fff;color:#b00020;font-size:14px;border-radius:6px;cursor:pointer;padding:2px 6px}
   .row{display:flex;gap:6px;margin-top:6px}
 
+  .toggle-details{display:none;margin-top:4px;color:#2b7cff;background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline;}
+
   #teaTable .cell-label {
     position: absolute;
     width: 1px;
@@ -157,7 +159,9 @@
   #teaTable { border-collapse: separate; }
   #teaTable thead { display: none; }
   #teaTable tr {
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 8px;
     margin: 10px 0;
     border: 1px solid #e4e7ee;
     border-radius: 10px;
@@ -174,6 +178,9 @@
     background: transparent;
   }
   #teaTable td::before { display: none; }
+  #teaTable tr td:nth-child(n+4){grid-column:span 3;}
+  #teaTable tr:not(.show-details) td:nth-child(n+4){display:none;}
+  .toggle-details{display:inline-block;}
   #teaTable .cell-label {
     position: static;
     width: auto;
@@ -599,7 +606,7 @@ function renderAllBrandSelects(){
     const id = `row-${++rowIdCounter}`;
     tr.innerHTML=`
 
-  <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名"></td>
+  <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名"><button type="button" class="toggle-details" aria-expanded="false">詳細▼</button></td>
   <td><label for="${id}-brand" class="cell-label">販売店・茶園</label><select id="${id}-brand" class="brandSel"></select></td>
   <td><label for="${id}-type" class="cell-label">種類・産地</label><select id="${id}-type" class="typeSel"></select></td>
   <td><label for="${id}-caf" class="cell-label">カフェイン</label><select id="${id}-caf"><option>あり</option><option>なし</option></select></td>
@@ -615,6 +622,12 @@ function renderAllBrandSelects(){
  `;
     renderBrandOptions(tr.querySelector(".brandSel"));
     renderTypeSelect(tr.querySelector(".typeSel"));
+    const tog = tr.querySelector('.toggle-details');
+    tog.addEventListener('click', () => {
+      const expanded = tr.classList.toggle('show-details');
+      tog.setAttribute('aria-expanded', expanded);
+      tog.textContent = expanded ? '閉じる▲' : '詳細▼';
+    });
     return tr;
   }
   

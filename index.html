@@ -155,6 +155,12 @@
 
   <!-- 茶葉リスト -->
   <section id="tab-table" class="card" style="display:none">
+    <div class="row" style="flex-wrap:wrap;align-items:center;margin-bottom:8px">
+    <button id="btnExportTeaJSON" class="btn">JSON保存</button>
+    <button id="btnExportTeaCSV" class="btn">CSV保存</button>
+    <button id="btnImportTea" class="btn">読み込み（JSON/CSV）</button>
+    <input id="importTeaFile" type="file" accept=".json,.csv,application/json,text/csv" style="display:none">
+  </div>
     <div style="overflow:auto;max-height:60vh">
       <table id="teaTable">
         <colgroup>
@@ -486,8 +492,19 @@ function renderTableFromArray(items){
     tb.appendChild(tr);
     if(!itm) return;
     tr.cells[0].querySelector("input").value = itm.name || "";
+
+    // ブランド：通常の描画
     renderBrandOptions(tr.cells[1].querySelector("select"), itm.brand || "");
-    renderTypeSelect(tr.cells[2].querySelector("select"), itm.type || "");
+
+    // 種類・産地：通常の描画
+    const typeSel = tr.cells[2].querySelector("select");
+    renderTypeSelect(typeSel, itm.type || "");
+    // フォールバック：選択肢に存在しない値でも表示できるようにする
+    if (itm?.type && typeSel.value !== itm.type) {
+      typeSel.appendChild(new Option("　┗ " + itm.type, itm.type));
+      typeSel.value = itm.type;
+    }
+
     tr.cells[3].querySelector("select").value = itm.caf || "あり";
     tr.cells[4].querySelector("select").value = itm.stock || "あり";
     tr.cells[5].querySelector("input").value = itm.bestBefore || "";
@@ -495,6 +512,161 @@ function renderTableFromArray(items){
     tr.cells[7].querySelector("input").value = (typeof itm.baseW==="number" && isFinite(itm.baseW)) ? itm.baseW : 1;
   });
 }
+/* ==== Tea list JSON/CSV Export/Import ==== */
+
+// CSVユーティリティ
+function csvCell(v){
+  const s = String(v ?? "");
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+  return s;
+}
+function toTeaCSV(items){
+  const header = ["商品名","販売店・茶園","種類・産地","カフェイン","在庫","賞味期限","メモ","当選倍率"];
+  const rows = items.map(it=>[
+    it.name||"", it.brand||"", it.type||"", it.caf||"あり", it.stock||"あり",
+    it.bestBefore||"", it.note||"", (isFinite(it.baseW)?it.baseW:1)
+  ]);
+  return [header, ...rows].map(r=>r.map(csvCell).join(",")).join("\n");
+}
+
+// CSVパーサ（ダブルクォート対応）
+function parseCSV(text){
+  text = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  const rows=[]; let row=[]; let cur=""; let inQ=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inQ){
+      if(ch === '"'){
+        if(text[i+1] === '"'){ cur+='"'; i++; }
+        else { inQ=false; }
+      }else cur+=ch;
+    }else{
+      if(ch === '"') inQ=true;
+      else if(ch === ','){ row.push(cur); cur=""; }
+      else if(ch === '\n'){ row.push(cur); rows.push(row); row=[]; cur=""; }
+      else cur+=ch;
+    }
+  }
+  row.push(cur); rows.push(row);
+  if(rows.length && rows[rows.length-1].every(c=>c==="")) rows.pop();
+  const header = rows.shift() || [];
+  return { header, rows };
+}
+
+// キー正規化（日本語カラム名も吸収）
+function normalizeKey(k){
+  return k.toString().toLowerCase()
+    .replace(/\s+/g,"")
+    .replace(/[._（）()・]/g,""); // 記号除去
+}
+const RAW_KEYMAP = {
+  "name":"name", "商品名":"name",
+  "brand":"brand","販売店":"brand","販売店・茶園":"brand","茶園":"brand","ブランド":"brand",
+  "type":"type","種類":"type","種類・産地":"type","産地":"type",
+  "caf":"caf","カフェイン":"caf",
+  "stock":"stock","在庫":"stock",
+  "bestbefore":"bestBefore","期限":"bestBefore","賞味期限":"bestBefore","best_before":"bestBefore",
+  "note":"note","メモ":"note",
+  "basew":"baseW","当選倍率":"baseW","倍率":"baseW","基本倍率":"baseW","基本重み":"baseW","weight":"baseW"
+};
+const KEYMAP = Object.fromEntries(
+  Object.entries(RAW_KEYMAP).map(([k,v]) => [normalizeKey(k), v])
+);
+function ynToArinaShi(v, defv="あり"){
+  const s = String(v ?? "").trim().toLowerCase();
+  if(!s) return defv;
+  if(["あり","有","yes","true","1","在庫あり","有り"].includes(s)) return "あり";
+  if(["なし","無","no","false","0","在庫なし"].includes(s)) return "なし";
+  return defv;
+}
+function normItem(obj){
+  const out = {name:"",brand:"",type:"",caf:"あり",stock:"あり",bestBefore:"",note:"",baseW:1};
+  Object.keys(obj||{}).forEach(k=>{
+    const nk = KEYMAP[ normalizeKey(k) ];
+    if(!nk) return;
+    out[nk] = obj[k];
+  });
+  out.caf   = ynToArinaShi(out.caf, "あり");
+  out.stock = ynToArinaShi(out.stock, "あり");
+  const w = parseFloat(out.baseW);
+  out.baseW = (isFinite(w) && w>0) ? w : 1;
+  // bestBeforeはとりあえず文字列のまま（YYYY-MM-DD推奨）
+  return out;
+}
+
+// JSON保存
+function exportTeaJSON(){
+  const data = readTableToArray();
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "tea-items.json";
+  a.click();
+  toast("JSONを保存しました");
+}
+
+// CSV保存
+function exportTeaCSV(){
+  const data = readTableToArray();
+  const csv = toTeaCSV(data);
+  const blob = new Blob(["\uFEFF"+csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "tea-items.csv";
+  a.click();
+  toast("CSVを保存しました");
+}
+
+// 読み込み（JSON/CSV）
+async function importTeaFromFile(file){
+  let text = await file.text();
+  text = text.replace(/^\uFEFF/, ''); 
+  let items = [];
+  try {
+    // まずJSON試行
+    const j = JSON.parse(text);
+    if(Array.isArray(j)) items = j.map(normItem);
+    else if (Array.isArray(j.items)) items = j.items.map(normItem);
+  } catch(e){
+    // CSVとして解析
+    const {header, rows} = parseCSV(text);
+    const keys = header.map(h=>KEYMAP[ normalizeKey(h) ] || null);
+    items = rows.map(cols=>{
+      const o={};
+      cols.forEach((v,i)=>{ if(keys[i]) o[keys[i]] = v; });
+      return normItem(o);
+    });
+  }
+  if(!items.length){ toast("読み込めるデータが見つかりませんでした"); return; }
+
+  // 既存に追加/置換を選択
+  const replace = confirm("読み込んだリストで現在の茶葉リストを置き換えますか？\nOK:置き換え / キャンセル:追加");
+  const current = readTableToArray();
+  const merged = replace ? items : current.concat(items);
+
+  // ブランドは全体に反映（選択肢へ追加）
+  const brands = loadBrands();
+  let changed=false;
+  items.forEach(it=>{
+    if(it.brand && !brands.includes(it.brand)){ brands.push(it.brand); changed=true; }
+  });
+  if(changed){ saveBrands(brands); renderAllBrandSelects(); }
+
+  saveTeaList(merged);
+  renderTableFromArray(merged);
+  toast("茶葉リストを読み込みました");
+}
+
+// ボタンイベント
+$("#btnExportTeaJSON").addEventListener("click", exportTeaJSON);
+$("#btnExportTeaCSV").addEventListener("click", exportTeaCSV);
+$("#btnImportTea").addEventListener("click", ()=> $("#importTeaFile").click());
+$("#importTeaFile").addEventListener("change", (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  importTeaFromFile(f).finally(()=>{ e.target.value=""; });
+});
+
 // デバウンス関数（連続入力の保存をまとめる）
 function debounce(fn, delay){
   let timer;

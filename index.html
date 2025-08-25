@@ -27,7 +27,7 @@
   .subtab{padding:6px 10px;border-radius:999px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:13px}
   .subtab.active{background:#2b2f36;color:#fff;border-color:#2b2f36}
   table{width:100%;border-collapse:collapse}
-  th,td{border-bottom:1px solid #eef1f6;padding:6px;text-align:left;font-size:14px;vertical-align:top}
+  th,td{border-bottom:1px solid #eef1f6;padding:2px 4px;text-align:left;font-size:14px;vertical-align:top}
   th{background:#fafbfc;position:sticky;top:0;z-index:1}
 
   .teaTableWrap{overflow:auto;max-height:60vh;display:flex;justify-content:center;}
@@ -61,9 +61,9 @@
   #teaTable select{
     width:100%; max-width:100%; min-width:0;
     box-sizing:border-box;
-    border:1px solid #c8cdd6; border-radius:6px; background:#fff; padding:6px 8px;
+    border:1px solid #c8cdd6; border-radius:6px; background:#fff; padding:2px 4px;
   }
-  #teaTable select{padding:4px 8px}
+  #teaTable select{padding:2px 4px}
   #teaTable input[type="text"]:focus,
   #teaTable input[type="number"]:focus,
   #teaTable input[type="date"]:focus,
@@ -80,7 +80,7 @@
     white-space:normal;overflow:visible;text-overflow:clip;
   }
   /* 行削除ボタン＆倍率セルの横並び */
-  #teaTable .weightWrap{display:flex;gap:6px;align-items:center}
+  #teaTable .weightWrap{display:flex;gap:2px;align-items:center}
   #teaTable .weightWrap input[type="number"]{flex:1}
   #teaTable .row-del{
   border:1px solid #b00020;background:#fff;color:#b00020;
@@ -91,7 +91,6 @@
     flex: 0 0 auto;
     white-space: nowrap;
   }
-  #teaTable .weightWrap{ gap:8px } /* 6px→8px など微調整 */
   #teaTable .row-del:focus-visible{
     outline: 2px solid #b00020;
     outline-offset: 2px;
@@ -248,7 +247,7 @@
   #teaTable .weightWrap {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 2px;
     align-items: stretch;
     margin-top: 4px;
   }

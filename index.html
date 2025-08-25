@@ -1373,5 +1373,18 @@ renderAll();
 </script>
 
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('Service worker registered:', reg))
+      .catch(err => console.error('Service worker registration failed:', err));
+  } else {
+    console.log('Service workers are not supported in this browser.');
+  }
+});
+</script>
+
+
 </body>
 </html>

@@ -264,6 +264,9 @@
       <label>種類・産地
         <select id="fType"></select>
       </label>
+      <label>販売店・茶園
+        <select id="fBrand"></select>
+      </label>
       <label>カフェイン
         <select id="fCaf">
           <option value="">すべて</option>
@@ -271,7 +274,7 @@
           <option value="なし">なし</option>
         </select>
       </label>
-      <input id="fKeyword" placeholder="商品名・種類・産地・メモで検索"
+      <input id="fKeyword" placeholder="商品名・販売店・茶園・種類・産地・メモ…"
        autocomplete="off" autocapitalize="off" autocorrect="off" inputmode="text">
 
       <span id="countInfo" class="muted"></span>
@@ -559,6 +562,14 @@ function renderBrandOptions(sel, selected=""){
 }
 
 
+function renderDrawBrandFilter(sel, selected=""){
+  const brands = loadBrands();
+  sel.innerHTML = "";
+  sel.appendChild(new Option("すべて", ""));
+  brands.forEach(b => sel.appendChild(new Option(b, b)));
+  sel.value = selected || "";
+}
+
 function renderTypeSelect(sel, selected=""){
   const schema = loadTypeSchema();
   // デフォルトが消えていた場合もここで復旧
@@ -618,6 +629,7 @@ function refreshAllTypeSelects(){
   $$(".typeSel").forEach(s=> renderTypeSelect(s, s.value) );
 }
 function renderAllBrandSelects(){
+  renderDrawBrandFilter($("#fBrand"), $("#fBrand").value);
   $$(".brandSel").forEach(s=> renderBrandOptions(s, s.value) );
 }
 
@@ -941,6 +953,7 @@ function drawTea(){
   const rows=$$("#teaBody tr");
   const fType=$("#fType").value;   // "" or カテゴリ名 or 具体名
   const fCaf=$("#fCaf").value;     // ""=すべて / "あり" / "なし"
+  const fBrand=$("#fBrand").value;
   const kw = ($("#fKeyword").value||"").toLowerCase();
 
   let cands=[];
@@ -958,6 +971,8 @@ function drawTea(){
 
     if(stock!=="あり") return;
 
+    if(fBrand && brand!==fBrand) return;
+
     // 種類フィルタ
     if(fType){
       const catList = typesInCategory(fType);
@@ -969,7 +984,7 @@ function drawTea(){
     if(fCaf && caf!==fCaf) return;
 
     // フリーワード
-    const hay=(name+" "+type+" "+note).toLowerCase();
+    const hay=(name+" "+brand+" "+type+" "+note).toLowerCase();
     if(kw && !hay.includes(kw)) return;
 
     cands.push({name,brand:(brand||""),type:(type||""),caf,stock,bestBefore,baseW:(isFinite(baseW)?baseW:1),note});

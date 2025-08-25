@@ -140,7 +140,9 @@
   .row{display:flex;gap:6px;margin-top:6px}
 
   .toggle-details{display:none;margin-top:4px;color:#2b7cff;background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline;}
+
   .toggle-details.bottom{margin-top:8px;text-align:right;width:100%;}
+
 
   #teaTable .cell-label {
     position: absolute;
@@ -613,7 +615,9 @@ function renderAllBrandSelects(){
     const id = `row-${++rowIdCounter}`;
     tr.innerHTML=`
 
-  <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名"><button type="button" class="toggle-details top" aria-expanded="false">詳細▼</button></td>
+
+  <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名"><button type="button" class="toggle-details" aria-expanded="false">詳細▼</button></td>
+
   <td><label for="${id}-brand" class="cell-label">販売店・茶園</label><select id="${id}-brand" class="brandSel"></select></td>
   <td><label for="${id}-type" class="cell-label">種類・産地</label><select id="${id}-type" class="typeSel"></select></td>
   <td><label for="${id}-caf" class="cell-label">カフェイン</label><select id="${id}-caf"><option>あり</option><option>なし</option></select></td>
@@ -630,6 +634,7 @@ function renderAllBrandSelects(){
 `;
     renderBrandOptions(tr.querySelector(".brandSel"));
     renderTypeSelect(tr.querySelector(".typeSel"));
+
     const toggles = tr.querySelectorAll('.toggle-details');
     const setExpanded = (expanded) => {
       tr.classList.toggle('show-details', expanded);
@@ -641,6 +646,8 @@ function renderAllBrandSelects(){
     toggles.forEach(btn => btn.addEventListener('click', () => {
       setExpanded(!tr.classList.contains('show-details'));
     }));
+
+
     return tr;
   }
   

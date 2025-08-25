@@ -141,6 +141,9 @@
 
   .toggle-details{display:none;margin-top:4px;color:#2b7cff;background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline;}
 
+  .toggle-details.bottom{margin-top:8px;text-align:right;width:100%;}
+
+
   #teaTable .cell-label {
     position: absolute;
     width: 1px;
@@ -612,7 +615,9 @@ function renderAllBrandSelects(){
     const id = `row-${++rowIdCounter}`;
     tr.innerHTML=`
 
+
   <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名"><button type="button" class="toggle-details" aria-expanded="false">詳細▼</button></td>
+
   <td><label for="${id}-brand" class="cell-label">販売店・茶園</label><select id="${id}-brand" class="brandSel"></select></td>
   <td><label for="${id}-type" class="cell-label">種類・産地</label><select id="${id}-type" class="typeSel"></select></td>
   <td><label for="${id}-caf" class="cell-label">カフェイン</label><select id="${id}-caf"><option>あり</option><option>なし</option></select></td>
@@ -622,18 +627,27 @@ function renderAllBrandSelects(){
   <td class="editable"><label for="${id}-weight" class="cell-label">当選倍率</label>
     <div class="weightWrap">
       <input id="${id}-weight" type="number" step="0.1" value="1" title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります。">
-      <button type="button" class="row-del" title="この行を削除">×</button>
+      <button type="button" class="row-del" title="リストから削除">削除</button>
+      <button type="button" class="toggle-details bottom" aria-expanded="false">閉じる▲</button>
     </div>
   </td>
- `;
+`;
     renderBrandOptions(tr.querySelector(".brandSel"));
     renderTypeSelect(tr.querySelector(".typeSel"));
-    const tog = tr.querySelector('.toggle-details');
-    tog.addEventListener('click', () => {
-      const expanded = tr.classList.toggle('show-details');
-      tog.setAttribute('aria-expanded', expanded);
-      tog.textContent = expanded ? '閉じる▲' : '詳細▼';
-    });
+
+    const toggles = tr.querySelectorAll('.toggle-details');
+    const setExpanded = (expanded) => {
+      tr.classList.toggle('show-details', expanded);
+      toggles.forEach(btn => {
+        btn.setAttribute('aria-expanded', expanded);
+        btn.textContent = expanded ? '閉じる▲' : '詳細▼';
+      });
+    };
+    toggles.forEach(btn => btn.addEventListener('click', () => {
+      setExpanded(!tr.classList.contains('show-details'));
+    }));
+
+
     return tr;
   }
   

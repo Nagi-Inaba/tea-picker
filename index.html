@@ -30,7 +30,8 @@
   th,td{border-bottom:1px solid #eef1f6;padding:6px;text-align:left;font-size:14px;vertical-align:top}
   th{background:#fafbfc;position:sticky;top:0;z-index:1}
 
-  .teaTableWrap{overflow:auto;max-height:60vh;}
+  .teaTableWrap{overflow:auto;max-height:60vh;display:flex;justify-content:center;}
+  #teaTable{margin-left:auto;margin-right:auto;}
 
   /* 入力セルの背景 */
   td.editable,
@@ -114,7 +115,7 @@
     .teaTableWrap{overflow:visible;max-height:none;}
     .pc-only{display:none;}
     .sp-only{display:inline;}
-    .card{width:90%;}
+    .card{width:90%;margin-left:auto;margin-right:auto;}
   }
   @media (max-width:768px), (hover:none) and (pointer:coarse) {
   .fab { display: none !important; }

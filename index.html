@@ -304,6 +304,7 @@
     <hr />
     <div id="drawResult">まだ抽選していません。</div>
     <div id="memoArea" style="display:none;margin-top:8px">
+      <div id="memoDisplay" style="margin-bottom:6px"></div>
       <textarea id="memoInput" rows="2" style="width:100%;border-radius:6px;border:1px solid #c8cdd6;"></textarea>
       <button id="btnSave" class="btn primary" style="margin-top:6px">確定して履歴に追加</button>
     </div>
@@ -1038,7 +1039,7 @@ function drawTea(){
   });
 
   $("#countInfo").textContent = cands.length ? `候補 ${cands.length} 件` : "候補 0 件";
-  if(!cands.length){ $("#drawResult").textContent="候補がありません"; $("#memoArea").style.display="none"; return null; }
+  if(!cands.length){ $("#drawResult").textContent="候補がありません"; $("#memoArea").style.display="none"; $("#memoDisplay").textContent=""; $("#memoInput").value=""; return null; }
 
   const now=new Date(); const hist=loadHist();
   const mode=settings.mode;
@@ -1069,6 +1070,8 @@ $("#btnDraw").addEventListener("click",()=>{
   setBtnLabel("再抽選");
   let badge=""; if(pick.bestBefore){ const d=new Date(pick.bestBefore); const today=new Date(); today.setHours(0,0,0,0); const left=Math.floor((d-today)/86400000); badge = `（残り ${left} 日）`; }
   $("#drawResult").innerHTML=`<b>${pick.name}</b> ${pick.brand?`(${pick.brand})`:""} - ${pick.type||""} ${pick.caf||""} ${badge}`;
+  $("#memoDisplay").textContent = pick.note || "";
+  $("#memoInput").value = "";
   $("#memoArea").style.display="block";
 });
 
@@ -1080,7 +1083,10 @@ $("#btnSave").addEventListener("click",()=>{
   hist.push({...currentPick,timestamp:new Date().toLocaleString(),note:$("#memoInput").value});
   saveHist(hist); renderHist();
   toast("保存しました");
-  $("#drawResult").textContent="まだ抽選していません。";$("#memoArea").style.display="none";$("#memoInput").value="";
+  $("#drawResult").textContent="まだ抽選していません。";
+  $("#memoArea").style.display="none";
+  $("#memoDisplay").textContent="";
+  $("#memoInput").value="";
   setBtnLabel("抽選する"); currentPick=null;
 });
 

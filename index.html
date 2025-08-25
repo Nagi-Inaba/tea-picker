@@ -192,7 +192,10 @@
     background: transparent;
   }
   #teaTable td::before { display: none; }
-  #teaTable tr td:nth-child(n+4){grid-column:span 3;}
+  /* 6列目以降は横幅いっぱいに、4-5列目（カフェイン・在庫）は横並び */
+  #teaTable tr td:nth-child(4){grid-column:1/span 1;}
+  #teaTable tr td:nth-child(5){grid-column:2/span 2;}
+  #teaTable tr td:nth-child(n+6){grid-column:span 3;}
   #teaTable tr:not(.show-details) td:nth-child(n+4){display:none;}
   .toggle-details{display:inline-block;}
   #teaTable .cell-label {
@@ -565,7 +568,7 @@ function renderTypeSelect(sel, selected=""){
   Object.keys(schema).forEach(cat=>{
     sel.appendChild(new Option(cat, cat)); // 大カテゴリ自体を選べる
     (schema[cat]||[]).forEach(name=>{
-      sel.appendChild(new Option("　┗ " + name, name));
+      sel.appendChild(new Option("　　" + name, name));
     });
   });
 
@@ -600,7 +603,7 @@ function renderDrawTypeFilter(sel, selected=""){
   Object.keys(schema).forEach(cat=>{
     sel.appendChild(new Option(cat, cat));
     (schema[cat]||[]).forEach(name=>{
-      sel.appendChild(new Option("　┗ " + name, name));
+      sel.appendChild(new Option("　　" + name, name));
     });
   });
   sel.value = selected || "";
@@ -696,7 +699,7 @@ function renderTableFromArray(items){
     renderTypeSelect(typeSel, itm.type || "");
     // フォールバック：選択肢に存在しない値でも表示できるようにする
     if (itm?.type && typeSel.value !== itm.type) {
-      typeSel.appendChild(new Option("　┗ " + itm.type, itm.type));
+      typeSel.appendChild(new Option("　　" + itm.type, itm.type));
       typeSel.value = itm.type;
     }
 

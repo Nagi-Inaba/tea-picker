@@ -174,7 +174,7 @@
   #teaTable thead { display: none; }
   #teaTable tr {
     display: grid;
-    grid-template-columns: repeat(3,1fr);
+    grid-template-columns: repeat(2,1fr);
     gap: 8px;
     margin: 10px 0;
     border: 1px solid #e4e7ee;
@@ -192,10 +192,11 @@
     background: transparent;
   }
   #teaTable td::before { display: none; }
-  /* 6列目以降は横幅いっぱいに、4-5列目（カフェイン・在庫）は横並び */
+  /* 6列目以降は横幅いっぱいに、4-5列目（カフェイン・在庫）は横並び（比率50%） */
+  #teaTable tr td:nth-child(-n+3){grid-column:span 2;}
   #teaTable tr td:nth-child(4){grid-column:1/span 1;}
-  #teaTable tr td:nth-child(5){grid-column:2/span 2;}
-  #teaTable tr td:nth-child(n+6){grid-column:span 3;}
+  #teaTable tr td:nth-child(5){grid-column:2/span 1;}
+  #teaTable tr td:nth-child(n+6){grid-column:span 2;}
   #teaTable tr:not(.show-details) td:nth-child(n+4){display:none;}
   .toggle-details{display:inline-block;}
   #teaTable .cell-label {

@@ -625,10 +625,10 @@ function renderAllBrandSelects(){
     tr.innerHTML=`
 
 
-  <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名"><button type="button" class="toggle-details" aria-expanded="false">詳細▼</button></td>
-
+  <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名">
   <td><label for="${id}-brand" class="cell-label">販売店・茶園</label><select id="${id}-brand" class="brandSel"></select></td>
   <td><label for="${id}-type" class="cell-label">種類・産地</label><select id="${id}-type" class="typeSel"></select></td>
+  <button type="button" class="toggle-details" aria-expanded="false">詳細▼</button></td>
   <td><label for="${id}-caf" class="cell-label">カフェイン</label><select id="${id}-caf"><option>あり</option><option>なし</option></select></td>
   <td><label for="${id}-stock" class="cell-label">在庫</label><select id="${id}-stock"><option selected>あり</option><option>なし</option></select></td>
   <td class="editable"><label for="${id}-best" class="cell-label">賞味期限</label><input id="${id}-best" type="date"></td>

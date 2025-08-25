@@ -361,6 +361,9 @@
         <tbody id="teaBody"></tbody>
       </table>
     </div>
+    <div class="sp-only" style="margin-top:8px;text-align:center;">
+      <button id="btnAddRowBottom" class="btn">＋ 行を追加</button>
+    </div>
   </section>
 
   <!-- 履歴 -->
@@ -957,6 +960,7 @@ function addRow(){
 
 // 追加ボタン
 $("#btnAddRow")?.addEventListener("click", addRow);
+$("#btnAddRowBottom")?.addEventListener("click", addRow);
 
 // 行の削除（イベント委任）
 $("#teaBody").addEventListener("click", (e)=>{

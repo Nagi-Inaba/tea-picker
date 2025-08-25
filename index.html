@@ -1069,7 +1069,7 @@ $("#btnDraw").addEventListener("click",()=>{
   const pick=drawTea(); if(!pick)return;
   setBtnLabel("再抽選");
   let badge=""; if(pick.bestBefore){ const d=new Date(pick.bestBefore); const today=new Date(); today.setHours(0,0,0,0); const left=Math.floor((d-today)/86400000); badge = `（残り ${left} 日）`; }
-  $("#drawResult").innerHTML=`<b>${pick.name}</b> ${pick.brand?`(${pick.brand})`:""} - ${pick.type||""} ${badge}`;
+  $("#drawResult").innerHTML=`<b>${pick.name}</b> ${pick.brand} - ${pick.type||""} ${badge}`;
   $("#memoDisplay").textContent = pick.note || "";
   $("#memoInput").value = "";
   $("#memoArea").style.display="block";

@@ -84,6 +84,9 @@
     border-radius: 6px;
   }
 
+  .pc-only{display:inline;}
+  .sp-only{display:none;}
+
   /* スマホ時は少し比率調整 */
   @media (max-width:640px){
     #teaTable .col-name{width:25%}
@@ -91,6 +94,8 @@
     #teaTable .col-note{width:8%}
     #teaTable .col-weight{width:5%}
     .teaTableWrap{overflow:visible;max-height:none;}
+    .pc-only{display:none;}
+    .sp-only{display:inline;}
   }
   @media (max-width:768px), (hover:none) and (pointer:coarse) {
   .fab { display: none !important; }
@@ -627,7 +632,10 @@ function renderAllBrandSelects(){
   <td class="editable"><label for="${id}-weight" class="cell-label">当選倍率</label>
     <div class="weightWrap">
       <input id="${id}-weight" type="number" step="0.1" value="1" title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります。">
-      <button type="button" class="row-del" title="リストから削除">削除</button>
+      <button type="button" class="row-del" title="リストから削除">
+        <span class="pc-only">削除</span>
+        <span class="sp-only">リストから削除</span>
+      </button>
       <button type="button" class="toggle-details bottom" aria-expanded="false">閉じる▲</button>
     </div>
   </td>

@@ -37,13 +37,14 @@
 /* 合計 100% 版（削除ボタンが確実に見える配分） */
 #teaTable { table-layout: fixed; }
 #teaTable td, #teaTable th { overflow: hidden; }
-#teaTable .col-name   { width:18%; }  /* 商品名 */
-#teaTable .col-brand  { width:12%; }
-#teaTable .col-type   { width:16%; }
+#teaTable .col-name   { width:16%; }  /* 商品名 */
+#teaTable .col-brand  { width:11%; }
+#teaTable .col-type   { width:15%; }
+#teaTable .col-detail { width:6%;  }
 #teaTable .col-caf    { width:8%;  }
 #teaTable .col-stock  { width:8%;  }
-#teaTable .col-date   { width:14%; }
-#teaTable .col-note   { width:14%; }  /* メモ */
+#teaTable .col-date   { width:13%; }
+#teaTable .col-note   { width:13%; }  /* メモ */
 #teaTable .col-weight { width:10%;  }  /* 重み＋削除 */
 
   /* セル内フォームはセルに収める */
@@ -61,8 +62,8 @@
   #teaTable input[type="date"]:focus,
   #teaTable select:focus{outline:none;border-color:#666}
   /* 商品名は省略表示、メモもはみ出し禁止 */
-  #teaTable td:nth-child(1) input[type="text"],
-  #teaTable td:nth-child(7) input[type="text"]{
+#teaTable td:nth-child(1) input[type="text"],
+#teaTable td:nth-child(8) input[type="text"]{
     white-space:nowrap;text-overflow:ellipsis;overflow:hidden;
   }
   /* 行削除ボタン＆倍率セルの横並び */
@@ -144,7 +145,7 @@
   .item .del{border:1px solid #b00020;background:#fff;color:#b00020;font-size:14px;border-radius:6px;cursor:pointer;padding:2px 6px}
   .row{display:flex;gap:6px;margin-top:6px}
 
-  .toggle-details{display:none;margin-top:4px;color:#2b7cff;background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline;}
+  .toggle-details{display:inline-block;margin-top:4px;color:#2b7cff;background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline;}
 
   .toggle-details.bottom{margin-top:8px;text-align:right;width:100%;}
 
@@ -192,12 +193,12 @@
     background: transparent;
   }
   #teaTable td::before { display: none; }
-  /* 6列目以降は横幅いっぱいに、4-5列目（カフェイン・在庫）は横並び（比率50%） */
-  #teaTable tr td:nth-child(-n+3){grid-column:span 2;}
-  #teaTable tr td:nth-child(4){grid-column:1/span 1;}
-  #teaTable tr td:nth-child(5){grid-column:2/span 1;}
-  #teaTable tr td:nth-child(n+6){grid-column:span 2;}
-  #teaTable tr:not(.show-details) td:nth-child(n+4){display:none;}
+  /* 7列目以降は横幅いっぱいに、5-6列目（カフェイン・在庫）は横並び（比率50%） */
+  #teaTable tr td:nth-child(-n+4){grid-column:span 2;}
+  #teaTable tr td:nth-child(5){grid-column:1/span 1;}
+  #teaTable tr td:nth-child(6){grid-column:2/span 1;}
+  #teaTable tr td:nth-child(n+7){grid-column:span 2;}
+  #teaTable tr:not(.show-details) td:nth-child(n+5){display:none;}
   .toggle-details{display:inline-block;}
   #teaTable .cell-label {
     position: static;
@@ -305,6 +306,7 @@
           <col class="col-name">
           <col class="col-brand">
           <col class="col-type">
+          <col class="col-detail">
           <col class="col-caf">
           <col class="col-stock">
           <col class="col-date">
@@ -315,6 +317,7 @@
           <th>商品名<span class="muted">（必須）</span></th>
           <th>販売店・茶園</th>
           <th>種類・産地</th>
+          <th>詳細</th>
           <th>カフェイン</th>
           <th>在庫</th>
           <th>賞味期限</th>
@@ -625,15 +628,15 @@ function renderAllBrandSelects(){
     tr.innerHTML=`
 
 
-  <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名">
-  <td><label for="${id}-brand" class="cell-label">販売店・茶園</label><select id="${id}-brand" class="brandSel"></select></td>
-  <td><label for="${id}-type" class="cell-label">種類・産地</label><select id="${id}-type" class="typeSel"></select></td>
-  <button type="button" class="toggle-details" aria-expanded="false">詳細▼</button></td>
-  <td><label for="${id}-caf" class="cell-label">カフェイン</label><select id="${id}-caf"><option>あり</option><option>なし</option></select></td>
-  <td><label for="${id}-stock" class="cell-label">在庫</label><select id="${id}-stock"><option selected>あり</option><option>なし</option></select></td>
-  <td class="editable"><label for="${id}-best" class="cell-label">賞味期限</label><input id="${id}-best" type="date"></td>
-  <td class="editable"><label for="${id}-note" class="cell-label">メモ</label><input id="${id}-note" type="text" placeholder="メモ"></td>
-  <td class="editable"><label for="${id}-weight" class="cell-label">当選倍率</label>
+   <td class="editable"><label for="${id}-name" class="cell-label">商品名</label><input id="${id}-name" type="text" placeholder="商品名"></td>
+   <td><label for="${id}-brand" class="cell-label">販売店・茶園</label><select id="${id}-brand" class="brandSel"></select></td>
+   <td><label for="${id}-type" class="cell-label">種類・産地</label><select id="${id}-type" class="typeSel"></select></td>
+   <td><button type="button" class="toggle-details" aria-expanded="false">詳細▼</button></td>
+   <td><label for="${id}-caf" class="cell-label">カフェイン</label><select id="${id}-caf"><option>あり</option><option>なし</option></select></td>
+   <td><label for="${id}-stock" class="cell-label">在庫</label><select id="${id}-stock"><option selected>あり</option><option>なし</option></select></td>
+   <td class="editable"><label for="${id}-best" class="cell-label">賞味期限</label><input id="${id}-best" type="date"></td>
+   <td class="editable"><label for="${id}-note" class="cell-label">メモ</label><input id="${id}-note" type="text" placeholder="メモ"></td>
+   <td class="editable"><label for="${id}-weight" class="cell-label">当選倍率</label>
     <div class="weightWrap">
       <input id="${id}-weight" type="number" step="0.1" value="1" title="通常は 1 のままでOK。数値を上げると当たりやすく、下げると当たりにくくなります。">
       <button type="button" class="row-del" title="リストから削除">
@@ -673,15 +676,15 @@ function readTableToArray(){
   return rows.map(r=>{
     const name = r.cells[0].querySelector("input")?.value?.trim() || "";
     const brand = r.cells[1].querySelector("select")?.value || "";
-    const type  = r.cells[2].querySelector("select")?.value || "";
-    const caf   = r.cells[3].querySelector("select")?.value || "あり";
-    const stock = r.cells[4].querySelector("select")?.value || "あり";
-    const bestBefore = r.cells[5].querySelector("input")?.value || "";
-    const note  = r.cells[6].querySelector("input")?.value?.trim() || "";
-    const baseW = parseFloat(r.cells[7].querySelector("input")?.value || "1");
-    return { name, brand, type, caf, stock, bestBefore, note, baseW: isFinite(baseW)?baseW:1 };
-  }).filter(row => Object.values(row).some(v => String(v||"").length)); // 全部空行は省く
-}
+      const type  = r.cells[2].querySelector("select")?.value || "";
+      const caf   = r.cells[4].querySelector("select")?.value || "あり";
+      const stock = r.cells[5].querySelector("select")?.value || "あり";
+      const bestBefore = r.cells[6].querySelector("input")?.value || "";
+      const note  = r.cells[7].querySelector("input")?.value?.trim() || "";
+      const baseW = parseFloat(r.cells[8].querySelector("input")?.value || "1");
+      return { name, brand, type, caf, stock, bestBefore, note, baseW: isFinite(baseW)?baseW:1 };
+    }).filter(row => Object.values(row).some(v => String(v||"").length)); // 全部空行は省く
+  }
 
 function renderTableFromArray(items){
   const tb = document.querySelector("#teaBody");
@@ -704,13 +707,13 @@ function renderTableFromArray(items){
       typeSel.value = itm.type;
     }
 
-    tr.cells[3].querySelector("select").value = itm.caf || "あり";
-    tr.cells[4].querySelector("select").value = itm.stock || "あり";
-    tr.cells[5].querySelector("input").value = itm.bestBefore || "";
-    tr.cells[6].querySelector("input").value = itm.note || "";
-    tr.cells[7].querySelector("input").value = (typeof itm.baseW==="number" && isFinite(itm.baseW)) ? itm.baseW : 1;
-  });
-}
+      tr.cells[4].querySelector("select").value = itm.caf || "あり";
+      tr.cells[5].querySelector("select").value = itm.stock || "あり";
+      tr.cells[6].querySelector("input").value = itm.bestBefore || "";
+      tr.cells[7].querySelector("input").value = itm.note || "";
+      tr.cells[8].querySelector("input").value = (typeof itm.baseW==="number" && isFinite(itm.baseW)) ? itm.baseW : 1;
+    });
+  }
 /* ==== Tea list JSON/CSV Export/Import ==== */
 
 // CSVユーティリティ
@@ -947,11 +950,11 @@ function drawTea(){
 
     const brand=r.cells[1].querySelector("select").value; // 空OK
     const type=r.cells[2].querySelector("select").value;  // 空 or カテゴリ or 具体
-    const caf=r.cells[3].querySelector("select").value||"あり";
-    const stock=r.cells[4].querySelector("select").value||"あり";
-    const bestBefore=r.cells[5].querySelector("input").value;
-    const note=(r.cells[6].querySelector("input")?.value||"").trim();
-    const baseW=parseFloat(r.cells[7].querySelector("input").value||"1");
+    const caf=r.cells[4].querySelector("select").value||"あり";
+    const stock=r.cells[5].querySelector("select").value||"あり";
+    const bestBefore=r.cells[6].querySelector("input").value;
+    const note=(r.cells[7].querySelector("input")?.value||"").trim();
+    const baseW=parseFloat(r.cells[8].querySelector("input").value||"1");
 
     if(stock!=="あり") return;
 

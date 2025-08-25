@@ -156,7 +156,13 @@
   /* ===== モバイル専用レイアウト（カード表示） ===== */
 @media (max-width: 640px), (hover:none) and (pointer:coarse) {
   /* テーブルをカードに */
-  #teaTable { border-collapse: separate; }
+  #teaTable {
+    display: block;
+    border-collapse: separate;
+    table-layout: auto;
+    width: 100%;
+  }
+  #teaTable colgroup { display: none; }
   #teaTable thead { display: none; }
   #teaTable tr {
     display: grid;

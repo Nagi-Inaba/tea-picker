@@ -856,6 +856,28 @@ function normItem(obj){
   out.stock = ynToArinaShi(out.stock, "あり");
   const w = parseFloat(out.baseW);
   out.baseW = (isFinite(w) && w>0) ? w : 1;
+  if(typeof out.bestBefore === "string"){
+    const raw = out.bestBefore.trim();
+    if(raw){
+      const normalized = raw
+        .replace(/[年\.]/g, "-")
+        .replace(/[\/]/g, "-")
+        .replace(/月/g, "-")
+        .replace(/日/g, "")
+        .replace(/--+/g, "-")
+        .replace(/^-/g, "")
+        .replace(/-$/g, "");
+      const parts = normalized.split("-").filter(Boolean);
+      if(parts.length === 3 && parts[0].length === 4){
+        const [y,m,d] = parts;
+        const mm = m.padStart(2, "0");
+        const dd = d.padStart(2, "0");
+        if(/^(0[1-9]|1[0-2])$/.test(mm) && /^(0[1-9]|[12][0-9]|3[01])$/.test(dd)){
+          out.bestBefore = `${y}-${mm}-${dd}`;
+        }
+      }
+    }
+  }
   // bestBeforeはとりあえず文字列のまま（YYYY-MM-DD推奨）
   return out;
 }
